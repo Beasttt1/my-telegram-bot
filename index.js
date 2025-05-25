@@ -420,6 +420,24 @@ bot.on('callback_query', async (query) => {
   const currentText = query.message.text;
   const currentMarkup = query.message.reply_markup || null;
   
+    // ---- Anti-Spam ----
+  if (userId !== adminId) {
+    if (isMuted(userId)) {
+      await bot.answerCallbackQuery(query.id, { text: '🚫 به دلیل اسپم کردن دکمه‌ها، تا پانزده دقیقه نمی‌توانید از ربات استفاده کنید.', show_alert: true });
+      return;
+    }
+    if (!buttonSpamMap[userId]) buttonSpamMap[userId] = [];
+    const now = Date.now();
+    buttonSpamMap[userId] = buttonSpamMap[userId].filter(ts => now - ts < 8000);
+    buttonSpamMap[userId].push(now);
+    if (buttonSpamMap[userId].length > 8) {
+      muteMap[userId] = now + 15 * 60 * 1000; // 15 دقیقه میوت
+      buttonSpamMap[userId] = [];
+      await bot.answerCallbackQuery(query.id, { text: '🚫 به دلیل اسپم کردن دکمه‌ها، تا پانزده دقیقه نمی‌توانید از ربات استفاده کنید.', show_alert: true });
+      return;
+    }
+  }
+  
   if (query.data === 'challenge') {
     const isAdmin = userId === adminId;
     const weekStr = getCurrentWeekString();
@@ -497,23 +515,7 @@ if (data === 'activate_bot' && userId === adminId) {
   }
 });
 
-  // ---- Anti-Spam ----
-  if (userId !== adminId) {
-    if (isMuted(userId)) {
-      await bot.answerCallbackQuery(query.id, { text: '🚫 به دلیل اسپم کردن دکمه‌ها، تا پانزده دقیقه نمی‌توانید از ربات استفاده کنید.', show_alert: true });
-      return;
-    }
-    if (!buttonSpamMap[userId]) buttonSpamMap[userId] = [];
-    const now = Date.now();
-    buttonSpamMap[userId] = buttonSpamMap[userId].filter(ts => now - ts < 8000);
-    buttonSpamMap[userId].push(now);
-    if (buttonSpamMap[userId].length > 8) {
-      muteMap[userId] = now + 15 * 60 * 1000; // 15 دقیقه میوت
-      buttonSpamMap[userId] = [];
-      await bot.answerCallbackQuery(query.id, { text: '🚫 به دلیل اسپم کردن دکمه‌ها، تا پانزده دقیقه نمی‌توانید از ربات استفاده کنید.', show_alert: true });
-      return;
-    }
-  }
+
   
   if (data === 'tournament') {
   await bot.answerCallbackQuery(query.id);
@@ -524,6 +526,7 @@ if (data === 'hero_counter') {
   await bot.answerCallbackQuery(query.id, { text: 'این بخش به زودی فعال می‌شود. لطفا منتظر بمانید.', show_alert: true });
   return;
 }
+
 
   // ---- Main menu back ----
   if (data === 'main_menu') {
@@ -1259,7 +1262,7 @@ let txt = `🎯 اسکواد: ${req.squad_name}\n🎭نقش مورد نیاز: $
   });
 }
 
+// ... همه کدهای قبلی
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
+  console.log(`Server is running on port ${port}`);
 });
-})();
