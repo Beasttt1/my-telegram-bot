@@ -1162,7 +1162,6 @@ if (!botActive && msg.from.id !== adminId) {
 });
 
 // ---- نمایش کارت اسکواد با ورق‌زنی (عمومی) ----
-// ---- نمایش کارت اسکواد با ورق‌زنی (عمومی) ----
 async function showSquadCard(userId, reqs, idx, messageId) {
   if (reqs.length === 0) {
     if (messageId) {
@@ -1263,8 +1262,9 @@ let txt = `🎯 اسکواد: ${req.squad_name}\n🎭نقش مورد نیاز: $
   });
 }
 
+// ... همه کدهای قبلی
 app.listen(port, () => {
-    console.log(`Server is running on port ${port}`);
-  });
+  console.log(`Server is running on port ${port}`);
+});
 
 })();
