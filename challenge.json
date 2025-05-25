@@ -5,7 +5,7 @@
   {"question": "کدام هیرو نقش SUPPORT دارد؟", "choices": ["Angela", "Zilong", "Aulus", "Brody"], "answer": 0},
   {"question": "کدام مپ Classic و Ranked را شامل می‌شود؟", "choices": ["Western Expanse", "Celestial Palace", "Imperial Sanctuary", "Sacred Statue"], "answer": 2},
   {"question": "کدام اسپل برای فرار یا تعقیب کاربردی است؟", "choices": ["Vengeance", "Flicker", "Revitalize", "Aegis"], "answer": 1},
-  {"question": "بهترین هیرو برای Jungle "choices": ["Gusion", "Layla", "Lolita", "Eudora"], "answer": 0},
+{"question": "بهترین هیرو برای Jungle", "choices": ["Gusion", "Layla", "Lolita", "Eudora"], "answer": 0},
   {"question": "کدام هیرو لقب 'Dawn's Light' دارد؟", "choices": ["Miya", "Lylia", "Silvanna", "Granger"], "answer": 0},
   {"question": "کدام نقش معمولاً بیشترین HP را دارد؟", "choices": ["Assassin", "Marksman", "Tank", "Mage"], "answer": 2},
   {"question": "کدام آیتم ضد Heal است؟", "choices": ["Necklace of Durance", "Windtalker", "Blade of Despair", "Endless Battle"], "answer": 0},
