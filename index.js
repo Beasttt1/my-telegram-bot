@@ -1,9 +1,10 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
+const fs = require('fs');
 const { initializeApp } = require('firebase/app');
 const { getDatabase, ref, set, get, update, remove, push } = require('firebase/database');
-const axios = require('axios');
+const challengeQuestions = JSON.parse(fs.readFileSync('./challenge.json', 'utf8'));
 const app = express();
 
 const token = process.env.BOT_TOKEN;
@@ -11,6 +12,15 @@ const adminId = Number(process.env.ADMIN_ID);
 const webhookUrl = process.env.WEBHOOK_URL;
 const port = process.env.PORT || 10000;
 let botActive = true
+
+const challengeState = {}; // userId -> وضعیت فعلی چالش
+const CHALLENGE_PER_WEEK}`);
+function getCurrentWeekString() {
+  const now = new Date();
+  const onejan = new Date(now.getFullYear(), 0, 1);
+  const week = Math.ceil((((now - onejan) / 86400000) + onejan.getDay() + 1) / 7);
+  return `${now.getFullYear()}-${week}`;
+}
 
 // ---- Firebase Config ----
 const firebaseConfig = {
@@ -39,16 +49,6 @@ async function getUser(userId) {
   const snap = await get(userRef(userId));
   return snap.exists() ? snap.val() : null;
 }
-const userStates = new Map();
-const userTemp = new Map();
-
-function setUserState(userId, state) { userStates.set(userId, state); }
-function getUserState(userId) { return userStates.get(userId); }
-function clearUserState(userId) { userStates.delete(userId); }
-
-function setUserTemp(userId, data) { userTemp.set(userId, data); }
-function getUserTemp(userId) { return userTemp.get(userId) || {}; }
-function clearUserTemp(userId) { userTemp.delete(userId); }
 async function updatePoints(userId, amount) {
   const user = await getUser(userId);
   if (user) await update(userRef(userId), { points: (user.points || 0) + amount });
@@ -68,6 +68,74 @@ async function setHelpText(newText) {
   await set(settingsRef('help_text'), newText);
 }
 
+async function nextChallengeOrFinish(userId) {
+  const state = challengeState[userId];
+  if (!state || state.finished) return;
+  state.current++;
+  if (state.current < state.questions.length) {
+    sendChallengeQuestion(userId);
+  } else {
+    state.finished = true;
+    const weekStr = state.week;
+    if (userId !== adminId) {
+      await set(challengeUserRef(userId, weekStr), {
+        finished: true,
+        correct: state.correct,
+        total: state.questions.length,
+        results: state.results
+      });
+    }
+    await bot.sendMessage(
+      userId,
+      `🎉 چالش این هفته تمام شد!\nتعداد پاسخ صحیح: ${state.correct} از ${state.questions.length}\nامتیاز کل: ${state.correct * 2} سکه`
+    );
+    delete challengeState[userId];
+  }
+}
+
+async function sendChallengeQuestion(userId) {
+  const state = challengeState[userId];
+  if (!state || state.finished) return;
+  const qObj = state.questions[state.current];
+  const qNum = state.current + 1;
+  const total = state.questions.length;
+
+  const opts = {
+    reply_markup: {
+      inline_keyboard: [
+        qObj.choices.map((choice, idx) => ({
+          text: choice,
+          callback_data: `challenge_answer_${qNum - 1}_${idx}`
+        }))
+      ]
+    }
+  };
+
+  const msg = await bot.sendMessage(
+    userId,
+    `سوال ${qNum} از ${total}:\n${qObj.question}`,
+    opts
+  );
+  state.messageIds.push(msg.message_id);
+
+  let answered = false;
+  const timer = setTimeout(async () => {
+    if (!answered) {
+      answered = true;
+      state.results.push({ correct: false, timedOut: true });
+      await bot.sendMessage(userId, `⏱ زمان این سوال تمام شد! (${qNum}/${total})`);
+      nextChallengeOrFinish(userId);
+    }
+  }, CHALLENGE_TIMEOUT);
+
+  // قرار دادن وضعیت انتظار پاسخ برای این سوال
+  state.waitingFor = {
+    qIdx: qNum - 1,
+    timer,
+    answeredFlag: () => answered,
+    setAnswered: () => { answered = true; }
+  };
+}
 
 async function getAllUsersFromDatabase() {
   // مثلا نمونه برای SQLite:
@@ -162,6 +230,7 @@ function isMuted(userId) {
 }
 
 // ---- User State ----
+const userState = {};
 const supportChatMap = {};
 
 // ---- Bot Init ----
@@ -203,9 +272,6 @@ function mainMenuKeyboard() {
     [
       { text: '➕ ثبت درخواست اسکواد', callback_data: 'squad_request' },
       { text: '👥 مشاهده اسکوادها', callback_data: 'view_squads' }
-    ],
-    [
-              { text: 'اطلاعات بازیکن🪞', callback_data: 'get_mlbb_profile' }
     ],
     [
       { text: '💬پشتیبانی', callback_data: 'support' }
@@ -342,24 +408,43 @@ bot.onText(/\/panel/, async (msg) => {
 
 // ---- CALLBACK QUERIES ----
 bot.on('callback_query', async (query) => {
-  const userId = query.from.id;
-  const data = query.data;
-  // ...
-if (data === 'get_mlbb_profile') {
-    setUserState(userId, 'awaiting_mlbb_uid');
-    await bot.answerCallbackQuery(query.id);
-    await bot.sendMessage(userId, 'لطفاً آیدی بازی (UID) خود را وارد کنید:\n\nمثال: 123456789');
-    return;
-  }
-  // ... سایر کدها ...
   if (!botActive && query.from.id !== adminId) {
     await bot.answerCallbackQuery(query.id, { text: 'ربات موقتاً خاموش است.', show_alert: true });
     return;
   }
 
+  const userId = query.from.id;
+  const data = query.data;
   const messageId = query.message && query.message.message_id;
   const currentText = query.message.text;
   const currentMarkup = query.message.reply_markup || null;
+  
+  if (query.data === 'challenge') {
+    const isAdmin = userId === adminId;
+    const weekStr = getCurrentWeekString();
+    const prev = await get(challengeUserRef(userId, weekStr));
+    if (prev.exists() && !isAdmin) {
+      await bot.answerCallbackQuery(query.id, { text: 'شما این هفته چالش را انجام داده‌اید!', show_alert: true });
+      return;
+    }
+    // 3 سوال تصادفی
+    const selected = challengeQuestions
+      .map((q, i) => ({ ...q, idx: i }))
+      .sort(() => Math.random() - 0.5)
+      .slice(0, CHALLENGE_PER_WEEK);
+
+    challengeState[userId] = {
+      week: weekStr,
+      questions: selected,
+      current: 0,
+      correct: 0,
+      messageIds: [],
+      finished: false,
+      results: []
+    };
+    await bot.answerCallbackQuery(query.id);
+    sendChallengeQuestion(userId);
+  }
 
   // فرض بر این که می‌خواهی منوی اصلی را نمایش بدهی
   
@@ -401,10 +486,6 @@ if (data === 'hero_counter') {
   await bot.answerCallbackQuery(query.id, { text: 'این بخش به زودی فعال می‌شود. لطفا منتظر بمانید.', show_alert: true });
   return;
 }
-if (data === 'challenge') {
-  await bot.answerCallbackQuery(query.id, { text: 'این بخش فعلاً از دسترس خارج شده است.', show_alert: true });
-  return;
-}
 
   // ---- Main menu back ----
   if (data === 'main_menu') {
@@ -432,8 +513,6 @@ if (data === 'challenge') {
       }
     );
   }
-
-  // ... سایر کدها ...
 
   // ---- بخش شانس ----
   if (data === 'chance') {
@@ -786,61 +865,56 @@ if (data.startsWith('delete_squadreq_') && userId === adminId) {
 
 // ---- اداره مراحل ثبت اسکواد ----
 // ... ناحیه message handler بدون تغییر، فقط بخش stateهای جدید اضافه شود
-  
- 
-
-  // ... سایر کدها ...
-
-  // مرحله ۱: دریافت UID
-
-  // مرحله ۲: دریافت شماره سرور و نمایش پروفایل
 bot.on('message', async (msg) => {
   const userId = msg.from.id;
-  const text = msg.text ? msg.text.trim() : '';
-  const state = getUserState(userId);
-
-  // مرحله ۱: دریافت UID
-  if (state === 'awaiting_mlbb_uid') {
-    if (!/^\d{6,}$/.test(text)) {
-      return bot.sendMessage(userId, 'آیدی بازی نامعتبر است. لطفاً فقط عدد UID را وارد کنید.');
-    }
-    setUserTemp(userId, { uid: text });
-    setUserState(userId, 'awaiting_mlbb_server');
-    return bot.sendMessage(userId, 'شماره سرور خود را وارد کنید:\n\nمثال: 1234');
-  }
-
-  // مرحله ۲: دریافت شماره سرور و نمایش پروفایل
-  if (state === 'awaiting_mlbb_server') {
-    if (!/^\d+$/.test(text)) {
-      return bot.sendMessage(userId, 'شماره سرور نامعتبر است. لطفاً فقط اعداد را وارد کنید.');
-    }
-    const { uid } = getUserTemp(userId);
-    clearUserState(userId);
-    clearUserTemp(userId);
-
-    try {
-      const res = await axios.get('https://www.freetogame.com/api/games');
-      const games = res.data;
-      if (!games || games.length === 0) {
-        return bot.sendMessage(userId, 'هیچ بازی‌ای یافت نشد.');
-      }
-      const game = games[0];
-      const msgTxt = `🎮 عنوان: ${game.title}\n📝 توضیحات: ${game.short_description}\n🧩 ژانر: ${game.genre}\n🌐 پلتفرم: ${game.platform}`;
-      await bot.sendMessage(userId, msgTxt);
-    } catch (e) {
-      await bot.sendMessage(userId, 'خطا در دریافت اطلاعات. لطفاً بعداً دوباره تلاش کنید.');
-    }
-    return;
-  }
-
-  // ... سایر stateها و کدها ...
+  const text = msg.text || '';
+  if (!userState[userId] && userId !== adminId) return;
+  const user = await getUser(userId);
   
-
-  // ... سایر کدها
+if (!botActive && msg.from.id !== adminId) {
+    return bot.sendMessage(msg.from.id, "ربات موقتاً خاموش است.");
+  }
   
   if (user?.banned) {
     return bot.sendMessage(userId, 'شما بن شده‌اید و اجازه استفاده ندارید.');
   }
+
+  if (query.data.startsWith('challenge_answer_')) {
+    const state = challengeState[userId];
+    if (!state || state.finished) return;
+
+    const [_, qIdxStr, ansIdxStr] = query.data.split('_');
+    const qIdx = parseInt(qIdxStr), ansIdx = parseInt(ansIdxStr);
+
+    // فقط اگر سوال جاری است
+    if (!state.waitingFor || state.waitingFor.qIdx !== qIdx) return;
+
+    // اگر قبلاً جواب داده یا تایم تموم شده
+    if (state.waitingFor.answeredFlag()) {
+      await bot.answerCallbackQuery(query.id, { text: 'این سوال تمام شده است.', show_alert: false });
+      return;
+    }
+
+    state.waitingFor.answeredFlag = () => true; // جلوگیری از چند جواب
+    clearTimeout(state.waitingFor.timer);
+
+    const qObj = state.questions[qIdx];
+    const correct = qObj.answer === ansIdx;
+    if (correct) state.correct++;
+
+    state.results.push({ correct, timedOut: false });
+    if (correct) {
+      await updatePoints(userId, 2);
+      await bot.answerCallbackQuery(query.id, { text: `✅ درست جواب دادی! +3 امتیاز (${qIdx+1}/${state.questions.length})`, show_alert: false });
+      await bot.sendMessage(userId, `✅ درست جواب دادی! +3 امتیاز (${qIdx+1}/${state.questions.length})`);
+    } else {
+      await bot.answerCallbackQuery(query.id, { text: `❌ اشتباه بود! (${qIdx+1}/${state.questions.length})`, show_alert: false });
+      await bot.sendMessage(userId, `❌ اشتباه جواب دادی! (${qIdx+1}/${state.questions.length})`);
+    }
+
+    setTimeout(() => nextChallengeOrFinish(userId), CHALLENGE_TIMEOUT - 200);
+  }
+});
 
   // ---- پاسخ به پشتیبانی توسط ادمین ----
   if (msg.reply_to_message && userId === adminId) {
@@ -851,16 +925,8 @@ bot.on('message', async (msg) => {
       return bot.sendMessage(adminId, '✅ پیام شما به کاربر ارسال شد.');
     }
   }
-  
-   if (state === 'awaiting_mlbb_uid') {
-    if (!/^\d{6,}$/.test(text)) {
-      return bot.sendMessage(userId, 'آیدی بازی نامعتبر است. لطفاً فقط عدد UID را وارد کنید.');
-    }
-    setUserTemp(userId, { uid: text });
-    setUserState(userId, 'awaiting_mlbb_server');
-    return bot.sendMessage(userId, 'شماره سرور خود را وارد کنید:\n\nمثال: 1234');
-  }
 
+  const state = userState[userId];
   if (!state) return;
   if (text === '/cancel') {
     userState[userId] = null;
