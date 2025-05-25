@@ -8,7 +8,8 @@ const CHALLENGE_PER_WEEK = 3; // یا هر تعداد سوال دلخواه
 const CHALLENGE_TIMEOUT = 10000; // ده ثانیه
 const challengeQuestions = JSON.parse(fs.readFileSync('./challenge.json', 'utf8'));
 const app = express();
-
+console.log('Start command received', msg.from.id);
+console.log('botActive:', botActive);
 const token = process.env.BOT_TOKEN;
 const adminId = Number(process.env.ADMIN_ID);
 const webhookUrl = process.env.WEBHOOK_URL;
