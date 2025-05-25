@@ -438,6 +438,24 @@ bot.on('callback_query', async (query) => {
     }
   }
   
+    if (data === 'tournament') {
+  await bot.answerCallbackQuery(query.id);
+  await bot.sendMessage(userId, 'فعلاً هیچ تورنمنتی در دسترس نیست.\nجزییات بیشتری بزودی اعلام خواهد شد.');
+  return;
+}
+if (data === 'hero_counter') {
+  await bot.answerCallbackQuery(query.id, { text: 'این بخش به زودی فعال می‌شود. لطفا منتظر بمانید.', show_alert: true });
+  return;
+}
+
+
+  // ---- Main menu back ----
+  if (data === 'main_menu') {
+    await bot.answerCallbackQuery(query.id);
+    sendMainMenu(userId, messageId);
+    return;
+  }
+  
   if (query.data === 'challenge') {
     const isAdmin = userId === adminId;
     const weekStr = getCurrentWeekString();
@@ -515,25 +533,6 @@ if (data === 'activate_bot' && userId === adminId) {
   }
 });
 
-
-  
-  if (data === 'tournament') {
-  await bot.answerCallbackQuery(query.id);
-  await bot.sendMessage(userId, 'فعلاً هیچ تورنمنتی در دسترس نیست.\nجزییات بیشتری بزودی اعلام خواهد شد.');
-  return;
-}
-if (data === 'hero_counter') {
-  await bot.answerCallbackQuery(query.id, { text: 'این بخش به زودی فعال می‌شود. لطفا منتظر بمانید.', show_alert: true });
-  return;
-}
-
-
-  // ---- Main menu back ----
-  if (data === 'main_menu') {
-    await bot.answerCallbackQuery(query.id);
-    sendMainMenu(userId, messageId);
-    return;
-  }
 
   const user = await getUser(userId);
   if (!user) return await bot.answerCallbackQuery(query.id, { text: 'خطا در دریافت اطلاعات کاربر.', show_alert: true });
