@@ -68,6 +68,7 @@ async function setHelpText(newText) {
   await set(settingsRef('help_text'), newText);
 }
 
+
 async function getAllUsersFromDatabase() {
   // مثلا نمونه برای SQLite:
   return new Promise((resolve, reject) => {
@@ -796,9 +797,7 @@ if (data.startsWith('delete_squadreq_') && userId === adminId) {
 bot.on('message', async (msg) => {
   const userId = msg.from.id;
   const text = msg.text ? msg.text.trim() : '';
-  if (userId === adminId && userState[userId] && userState[userId].step) {
-  // حالا مطمئنیم که userState[userId] وجود داره و step هم داره
-}
+  const state = getUserState(userId);
 
   // مرحله ۱: دریافت UID
   if (state === 'awaiting_mlbb_uid') {
@@ -820,27 +819,21 @@ bot.on('message', async (msg) => {
     clearUserTemp(userId);
 
     try {
-  const res = await axios.get('https://www.freetogame.com/api/games');
-  const games = res.data;
-
-  if (!games || games.length === 0) {
-    return bot.sendMessage(userId, 'هیچ بازی‌ای یافت نشد.');
+      const res = await axios.get('https://www.freetogame.com/api/games');
+      const games = res.data;
+      if (!games || games.length === 0) {
+        return bot.sendMessage(userId, 'هیچ بازی‌ای یافت نشد.');
+      }
+      const game = games[0];
+      const msgTxt = `🎮 عنوان: ${game.title}\n📝 توضیحات: ${game.short_description}\n🧩 ژانر: ${game.genre}\n🌐 پلتفرم: ${game.platform}`;
+      await bot.sendMessage(userId, msgTxt);
+    } catch (e) {
+      await bot.sendMessage(userId, 'خطا در دریافت اطلاعات. لطفاً بعداً دوباره تلاش کنید.');
+    }
+    return;
   }
 
-  const game = games[0]; // به عنوان نمونه، اولین بازی را انتخاب می‌کنیم
-  const msgTxt = `🎮 عنوان: ${game.title}\n📝 توضیحات: ${game.short_description}\n🧩 ژانر: ${game.genre}\n🌐 پلتفرم: ${game.platform}`;
-  await bot.sendMessage(userId, msgTxt);
-} catch (e) {
-  await bot.sendMessage(userId, 'خطا در دریافت اطلاعات. لطفاً بعداً دوباره تلاش کنید.');
-}
-  // ... بقیه کدهای message
-  
-  if (!userState[userId] && userId !== adminId) return;
-  const user = await getUser(userId);
-  
-if (!botActive && msg.from.id !== adminId) {
-    return bot.sendMessage(msg.from.id, "ربات موقتاً خاموش است.");
-  }
+  // ... سایر stateها و کدها ...
   
 
   // ... سایر کدها
