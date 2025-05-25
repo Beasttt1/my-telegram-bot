@@ -5,6 +5,8 @@ const { initializeApp } = require('firebase/app');
 const { getDatabase, ref, set, get, update, remove, push } = require('firebase/database');
 
 const app = express();
+const { startChallenge, handleAnswer } = require('./challenge');
+// فرض بر این است که bot, db, updatePoints, adminId قبلاً تعریف شده دکمه‌ها (callback_query):
 
 const token = process.env.BOT_TOKEN;
 const adminId = Number(process.env.ADMIN_ID);
@@ -380,8 +382,29 @@ if (data === 'hero_counter') {
   await bot.answerCallbackQuery(query.id, { text: 'این بخش به زودی فعال می‌شود. لطفا منتظر بمانید.', show_alert: true });
   return;
 }
-if (data === 'challenge') {
-  await bot.answerCallbackQuery(query.id, { text: 'این بخش فعلاً از دسترس خارج شده است.', show_alert: true });
+
+// شروع چالش
+if (query.data === 'challenge') {
+  await startChallenge({
+    userId: query.from.id,
+    bot,
+    db,
+    challengeUserRef: (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`),
+    adminId
+  });
+  return;
+}
+
+// جواب دادن به سوالات چالش
+if (query.data.startsWith('challenge_answer_')) {
+  await handleAnswer({
+    query,
+    bot,
+    updatePoints,
+    challengeUserRef: (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`),
+    db,
+    adminId
+  });
   return;
 }
 
