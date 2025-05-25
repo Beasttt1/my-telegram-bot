@@ -5,7 +5,6 @@ const { initializeApp } = require('firebase/app');
 const { getDatabase, ref, set, get, update, remove, push } = require('firebase/database');
 const axios = require('axios');
 const app = express();
-const userState = {};
 
 const token = process.env.BOT_TOKEN;
 const adminId = Number(process.env.ADMIN_ID);
@@ -797,7 +796,9 @@ if (data.startsWith('delete_squadreq_') && userId === adminId) {
 bot.on('message', async (msg) => {
   const userId = msg.from.id;
   const text = msg.text ? msg.text.trim() : '';
-  const state = getUserState(userId);
+  if (userId === adminId && userState[userId] && userState[userId].step) {
+  // حالا مطمئنیم که userState[userId] وجود داره و step هم داره
+}
 
   // مرحله ۱: دریافت UID
   if (state === 'awaiting_mlbb_uid') {
