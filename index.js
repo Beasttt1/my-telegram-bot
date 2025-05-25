@@ -1,30 +1,16 @@
 require('dotenv').config();
 const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
-const fs = require('fs');
 const { initializeApp } = require('firebase/app');
 const { getDatabase, ref, set, get, update, remove, push } = require('firebase/database');
-const CHALLENGE_PER_WEEK = 3; // یا هر تعداد سوال دلخواه
-const CHALLENGE_TIMEOUT = 10000; // ده ثانیه
-const challengeQuestions = JSON.parse(fs.readFileSync('./challenge.json', 'utf8'));
+
 const app = express();
-console.log('Start command received', msg.from.id);
-console.log('botActive:', botActive);
+
 const token = process.env.BOT_TOKEN;
 const adminId = Number(process.env.ADMIN_ID);
 const webhookUrl = process.env.WEBHOOK_URL;
 const port = process.env.PORT || 10000;
 let botActive = true
-
-const challengeState = {}; // userId -> وضعیت فعلی چالش
-const bot = new TelegramBot(token, { polling: false });
-  bot.setWebHook(`${webhookUrl}/bot${token}`);
-function getCurrentWeekString() {
-  const now = new Date();
-  const onejan = new Date(now.getFullYear(), 0, 1);
-  const week = Math.ceil((((now - onejan) / 86400000) + onejan.getDay() + 1) / 7);
-  return `${now.getFullYear()}-${week}`;
-}
 
 // ---- Firebase Config ----
 const firebaseConfig = {
@@ -32,7 +18,7 @@ const firebaseConfig = {
 };
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
-const challengeUserRef = (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`);
+
 // ---- User Helper Functions ----
 const userRef = userId => ref(db, `users/${userId}`);
 async function ensureUser(user) {
@@ -70,75 +56,6 @@ async function getHelpText() {
 }
 async function setHelpText(newText) {
   await set(settingsRef('help_text'), newText);
-}
-
-async function nextChallengeOrFinish(userId) {
-  const state = challengeState[userId];
-  if (!state || state.finished) return;
-  state.current++;
-  if (state.current < state.questions.length) {
-    sendChallengeQuestion(userId);
-  } else {
-    state.finished = true;
-    const weekStr = state.week;
-    if (userId !== adminId) {
-      await set(challengeUserRef(userId, weekStr), {
-        finished: true,
-        correct: state.correct,
-        total: state.questions.length,
-        results: state.results
-      });
-    }
-    await bot.sendMessage(
-      userId,
-      `🎉 چالش این هفته تمام شد!\nتعداد پاسخ صحیح: ${state.correct} از ${state.questions.length}\nامتیاز کل: ${state.correct * 2} سکه`
-    );
-    delete challengeState[userId];
-  }
-}
-
-async function sendChallengeQuestion(userId) {
-  const state = challengeState[userId];
-  if (!state || state.finished) return;
-  const qObj = state.questions[state.current];
-  const qNum = state.current + 1;
-  const total = state.questions.length;
-
-  const opts = {
-    reply_markup: {
-      inline_keyboard: [
-        qObj.choices.map((choice, idx) => ({
-          text: choice,
-          callback_data: `challenge_answer_${qNum - 1}_${idx}`
-        }))
-      ]
-    }
-  };
-
-  const msg = await bot.sendMessage(
-    userId,
-    `سوال ${qNum} از ${total}:\n${qObj.question}`,
-    opts
-  );
-  state.messageIds.push(msg.message_id);
-
-  let answered = false;
-  const timer = setTimeout(async () => {
-    if (!answered) {
-      answered = true;
-      state.results.push({ correct: false, timedOut: true });
-      await bot.sendMessage(userId, `⏱ زمان این سوال تمام شد! (${qNum}/${total})`);
-      nextChallengeOrFinish(userId);
-    }
-  }, CHALLENGE_TIMEOUT);
-
-  // قرار دادن وضعیت انتظار پاسخ برای این سوال
-  state.waitingFor = {
-    qIdx: qNum - 1,
-    timer,
-    answeredFlag: () => answered,
-    setAnswered: () => { answered = true; }
-  };
 }
 
 async function getAllUsersFromDatabase() {
@@ -242,7 +159,9 @@ const supportChatMap = {};
   await fetchBotActiveStatus();
   // اینجا بقیه کدهای bot و express را بنویس
   // مثلاً:
-  
+  const bot = new TelegramBot(token, { polling: false });
+  bot.setWebHook(`${webhookUrl}/bot${token}`);
+
   app.use(express.json());
   app.post(`/bot${token}`, (req, res) => {
     bot.processUpdate(req.body);
@@ -420,8 +339,21 @@ bot.on('callback_query', async (query) => {
   const messageId = query.message && query.message.message_id;
   const currentText = query.message.text;
   const currentMarkup = query.message.reply_markup || null;
+
+  // فرض بر این که می‌خواهی منوی اصلی را نمایش بدهی
   
-    // ---- Anti-Spam ----
+if (data === 'deactivate_bot' && userId === adminId) {
+  await setBotActiveStatus(false);
+  await bot.answerCallbackQuery(query.id, { text: 'ربات برای کاربران عادی خاموش شد.' });
+  return;
+}
+if (data === 'activate_bot' && userId === adminId) {
+  await setBotActiveStatus(true);
+  await bot.answerCallbackQuery(query.id, { text: 'ربات برای کاربران عادی روشن شد.' });
+  return;
+}
+
+  // ---- Anti-Spam ----
   if (userId !== adminId) {
     if (isMuted(userId)) {
       await bot.answerCallbackQuery(query.id, { text: '🚫 به دلیل اسپم کردن دکمه‌ها، تا پانزده دقیقه نمی‌توانید از ربات استفاده کنید.', show_alert: true });
@@ -439,7 +371,7 @@ bot.on('callback_query', async (query) => {
     }
   }
   
-    if (data === 'tournament') {
+  if (data === 'tournament') {
   await bot.answerCallbackQuery(query.id);
   await bot.sendMessage(userId, 'فعلاً هیچ تورنمنتی در دسترس نیست.\nجزییات بیشتری بزودی اعلام خواهد شد.');
   return;
@@ -448,7 +380,10 @@ if (data === 'hero_counter') {
   await bot.answerCallbackQuery(query.id, { text: 'این بخش به زودی فعال می‌شود. لطفا منتظر بمانید.', show_alert: true });
   return;
 }
-
+if (data === 'challenge') {
+  await bot.answerCallbackQuery(query.id, { text: 'این بخش فعلاً از دسترس خارج شده است.', show_alert: true });
+  return;
+}
 
   // ---- Main menu back ----
   if (data === 'main_menu') {
@@ -456,84 +391,6 @@ if (data === 'hero_counter') {
     sendMainMenu(userId, messageId);
     return;
   }
-  
-  if (query.data === 'challenge') {
-    const isAdmin = userId === adminId;
-    const weekStr = getCurrentWeekString();
-    const prev = await get(challengeUserRef(userId, weekStr));
-    if (prev.exists() && !isAdmin) {
-      await bot.answerCallbackQuery(query.id, { text: 'شما این هفته چالش را انجام داده‌اید!', show_alert: true });
-      return;
-    }
-    // 3 سوال تصادفی
-    const selected = challengeQuestions
-      .map((q, i) => ({ ...q, idx: i }))
-      .sort(() => Math.random() - 0.5)
-      .slice(0, CHALLENGE_PER_WEEK);
-
-    challengeState[userId] = {
-      week: weekStr,
-      questions: selected,
-      current: 0,
-      correct: 0,
-      messageIds: [],
-      finished: false,
-      results: []
-    };
-    await bot.answerCallbackQuery(query.id);
-    sendChallengeQuestion(userId);
-  }
-
-  // فرض بر این که می‌خواهی منوی اصلی را نمایش بدهی
-  
-if (data === 'deactivate_bot' && userId === adminId) {
-  await setBotActiveStatus(false);
-  await bot.answerCallbackQuery(query.id, { text: 'ربات برای کاربران عادی خاموش شد.' });
-  return;
-}
-if (data === 'activate_bot' && userId === adminId) {
-  await setBotActiveStatus(true);
-  await bot.answerCallbackQuery(query.id, { text: 'ربات برای کاربران عادی روشن شد.' });
-  return;
-}
-
-  if (query.data.startsWith('challenge_answer_')) {
-    const state = challengeState[userId];
-    if (!state || state.finished) return;
-
-    const [_, qIdxStr, ansIdxStr] = query.data.split('_');
-    const qIdx = parseInt(qIdxStr), ansIdx = parseInt(ansIdxStr);
-
-    // فقط اگر سوال جاری است
-    if (!state.waitingFor || state.waitingFor.qIdx !== qIdx) return;
-
-    // اگر قبلاً جواب داده یا تایم تموم شده
-    if (state.waitingFor.answeredFlag()) {
-      await bot.answerCallbackQuery(query.id, { text: 'این سوال تمام شده است.', show_alert: false });
-      return;
-    }
-
-    state.waitingFor.answeredFlag = () => true; // جلوگیری از چند جواب
-    clearTimeout(state.waitingFor.timer);
-
-    const qObj = state.questions[qIdx];
-    const correct = qObj.answer === ansIdx;
-    if (correct) state.correct++;
-
-    state.results.push({ correct, timedOut: false });
-    if (correct) {
-      await updatePoints(userId, 2);
-      await bot.answerCallbackQuery(query.id, { text: `✅ درست جواب دادی! +2 امتیاز (${qIdx+1}/${state.questions.length})`, show_alert: false });
-      await bot.sendMessage(userId, `✅ درست جواب دادی! +2 امتیاز (${qIdx+1}/${state.questions.length})`);
-    } else {
-      await bot.answerCallbackQuery(query.id, { text: `❌ اشتباه بود! (${qIdx+1}/${state.questions.length})`, show_alert: false });
-      await bot.sendMessage(userId, `❌ اشتباه جواب دادی! (${qIdx+1}/${state.questions.length})`);
-    }
-
-    setTimeout(() => nextChallengeOrFinish(userId), CHALLENGE_TIMEOUT - 200);
-  }
-});
-
 
   const user = await getUser(userId);
   if (!user) return await bot.answerCallbackQuery(query.id, { text: 'خطا در دریافت اطلاعات کاربر.', show_alert: true });
@@ -1262,7 +1119,8 @@ let txt = `🎯 اسکواد: ${req.squad_name}\n🎭نقش مورد نیاز: $
   });
 }
 
-// ... همه کدهای قبلی
 app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-});
+    console.log(`Server is running on port ${port}`);
+  });
+
+})();
