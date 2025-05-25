@@ -10,7 +10,7 @@
     "answer": 1
   },
   {
-    "question": "کدام آی است؟",
+    "question": "کدام آیتم سرعت هیرو را افزایش میدهد؟",
     "choices": ["Blade of Despair", "Swift Boots", "Immortality", "Athena's Shield"],
     "answer": 1
   },
@@ -28,11 +28,6 @@
     "question": "کدام نقش وظیفه فارم جنگل را دارد؟",
     "choices": ["Tank", "Jungler", "EXP Laner", "Gold Laner"],
     "answer": 1
-  },
-  {
-    "question": "چه آیتمی ضد CC است؟",
-    "choices": ["Oracle "Tough Boots", "Cursed Helmet"],
-    "answer": 2
   },
   {
     "question": "هیرو 'Gusion' چه نقشی دارد؟",
