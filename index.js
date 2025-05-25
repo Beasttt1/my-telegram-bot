@@ -3,8 +3,9 @@ const TelegramBot = require('node-telegram-bot-api');
 const express = require('express');
 const { initializeApp } = require('firebase/app');
 const { getDatabase, ref, set, get, update, remove, push } = require('firebase/database');
-
+const axios = require('axios');
 const app = express();
+const userState = {};
 
 const token = process.env.BOT_TOKEN;
 const adminId = Number(process.env.ADMIN_ID);
@@ -39,6 +40,16 @@ async function getUser(userId) {
   const snap = await get(userRef(userId));
   return snap.exists() ? snap.val() : null;
 }
+const userStates = new Map();
+const userTemp = new Map();
+
+function setUserState(userId, state) { userStates.set(userId, state); }
+function getUserState(userId) { return userStates.get(userId); }
+function clearUserState(userId) { userStates.delete(userId); }
+
+function setUserTemp(userId, data) { userTemp.set(userId, data); }
+function getUserTemp(userId) { return userTemp.get(userId) || {}; }
+function clearUserTemp(userId) { userTemp.delete(userId); }
 async function updatePoints(userId, amount) {
   const user = await getUser(userId);
   if (user) await update(userRef(userId), { points: (user.points || 0) + amount });
@@ -151,7 +162,6 @@ function isMuted(userId) {
 }
 
 // ---- User State ----
-const userState = {};
 const supportChatMap = {};
 
 // ---- Bot Init ----
@@ -193,6 +203,9 @@ function mainMenuKeyboard() {
     [
       { text: '➕ ثبت درخواست اسکواد', callback_data: 'squad_request' },
       { text: '👥 مشاهده اسکوادها', callback_data: 'view_squads' }
+    ],
+    [
+              { text: 'اطلاعات بازیکن🪞', callback_data: 'get_mlbb_profile' }
     ],
     [
       { text: '💬پشتیبانی', callback_data: 'support' }
@@ -329,13 +342,21 @@ bot.onText(/\/panel/, async (msg) => {
 
 // ---- CALLBACK QUERIES ----
 bot.on('callback_query', async (query) => {
+  const userId = query.from.id;
+  const data = query.data;
+  // ...
+if (data === 'get_mlbb_profile') {
+    setUserState(userId, 'awaiting_mlbb_uid');
+    await bot.answerCallbackQuery(query.id);
+    await bot.sendMessage(userId, 'لطفاً آیدی بازی (UID) خود را وارد کنید:\n\nمثال: 123456789');
+    return;
+  }
+  // ... سایر کدها ...
   if (!botActive && query.from.id !== adminId) {
     await bot.answerCallbackQuery(query.id, { text: 'ربات موقتاً خاموش است.', show_alert: true });
     return;
   }
 
-  const userId = query.from.id;
-  const data = query.data;
   const messageId = query.message && query.message.message_id;
   const currentText = query.message.text;
   const currentMarkup = query.message.reply_markup || null;
@@ -411,6 +432,8 @@ if (data === 'challenge') {
       }
     );
   }
+
+  // ... سایر کدها ...
 
   // ---- بخش شانس ----
   if (data === 'chance') {
@@ -763,15 +786,63 @@ if (data.startsWith('delete_squadreq_') && userId === adminId) {
 
 // ---- اداره مراحل ثبت اسکواد ----
 // ... ناحیه message handler بدون تغییر، فقط بخش stateهای جدید اضافه شود
+  
+ 
+
+  // ... سایر کدها ...
+
+  // مرحله ۱: دریافت UID
+
+  // مرحله ۲: دریافت شماره سرور و نمایش پروفایل
 bot.on('message', async (msg) => {
   const userId = msg.from.id;
-  const text = msg.text || '';
+  const text = msg.text ? msg.text.trim() : '';
+  const state = getUserState(userId);
+
+  // مرحله ۱: دریافت UID
+  if (state === 'awaiting_mlbb_uid') {
+    if (!/^\d{6,}$/.test(text)) {
+      return bot.sendMessage(userId, 'آیدی بازی نامعتبر است. لطفاً فقط عدد UID را وارد کنید.');
+    }
+    setUserTemp(userId, { uid: text });
+    setUserState(userId, 'awaiting_mlbb_server');
+    return bot.sendMessage(userId, 'شماره سرور خود را وارد کنید:\n\nمثال: 1234');
+  }
+
+  // مرحله ۲: دریافت شماره سرور و نمایش پروفایل
+  if (state === 'awaiting_mlbb_server') {
+    if (!/^\d+$/.test(text)) {
+      return bot.sendMessage(userId, 'شماره سرور نامعتبر است. لطفاً فقط اعداد را وارد کنید.');
+    }
+    const { uid } = getUserTemp(userId);
+    clearUserState(userId);
+    clearUserTemp(userId);
+
+    try {
+  const res = await axios.get('https://www.freetogame.com/api/games');
+  const games = res.data;
+
+  if (!games || games.length === 0) {
+    return bot.sendMessage(userId, 'هیچ بازی‌ای یافت نشد.');
+  }
+
+  const game = games[0]; // به عنوان نمونه، اولین بازی را انتخاب می‌کنیم
+  const msgTxt = `🎮 عنوان: ${game.title}\n📝 توضیحات: ${game.short_description}\n🧩 ژانر: ${game.genre}\n🌐 پلتفرم: ${game.platform}`;
+  await bot.sendMessage(userId, msgTxt);
+} catch (e) {
+  await bot.sendMessage(userId, 'خطا در دریافت اطلاعات. لطفاً بعداً دوباره تلاش کنید.');
+}
+  // ... بقیه کدهای message
+  
   if (!userState[userId] && userId !== adminId) return;
   const user = await getUser(userId);
   
 if (!botActive && msg.from.id !== adminId) {
     return bot.sendMessage(msg.from.id, "ربات موقتاً خاموش است.");
   }
+  
+
+  // ... سایر کدها
   
   if (user?.banned) {
     return bot.sendMessage(userId, 'شما بن شده‌اید و اجازه استفاده ندارید.');
@@ -786,8 +857,16 @@ if (!botActive && msg.from.id !== adminId) {
       return bot.sendMessage(adminId, '✅ پیام شما به کاربر ارسال شد.');
     }
   }
+  
+   if (state === 'awaiting_mlbb_uid') {
+    if (!/^\d{6,}$/.test(text)) {
+      return bot.sendMessage(userId, 'آیدی بازی نامعتبر است. لطفاً فقط عدد UID را وارد کنید.');
+    }
+    setUserTemp(userId, { uid: text });
+    setUserState(userId, 'awaiting_mlbb_server');
+    return bot.sendMessage(userId, 'شماره سرور خود را وارد کنید:\n\nمثال: 1234');
+  }
 
-  const state = userState[userId];
   if (!state) return;
   if (text === '/cancel') {
     userState[userId] = null;
