@@ -16,6 +16,8 @@ const port = process.env.PORT || 10000;
 let botActive = true
 
 const challengeState = {}; // userId -> وضعیت فعلی چالش
+const bot = new TelegramBot(token, { polling: false });
+  bot.setWebHook(`${webhookUrl}/bot${token}`);
 function getCurrentWeekString() {
   const now = new Date();
   const onejan = new Date(now.getFullYear(), 0, 1);
@@ -239,9 +241,7 @@ const supportChatMap = {};
   await fetchBotActiveStatus();
   // اینجا بقیه کدهای bot و express را بنویس
   // مثلاً:
-  const bot = new TelegramBot(token, { polling: false });
-  bot.setWebHook(`${webhookUrl}/bot${token}`);
-
+  
   app.use(express.json());
   app.post(`/bot${token}`, (req, res) => {
     bot.processUpdate(req.body);
@@ -1261,7 +1261,7 @@ let txt = `🎯 اسکواد: ${req.squad_name}\n🎭نقش مورد نیاز: $
     }
   });
 }
-
+})
 // ... همه کدهای قبلی
 app.listen(port, () => {
   console.log(`Server is running on port ${port}`);
