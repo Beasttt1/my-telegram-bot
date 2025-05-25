@@ -4,6 +4,8 @@ const express = require('express');
 const fs = require('fs');
 const { initializeApp } = require('firebase/app');
 const { getDatabase, ref, set, get, update, remove, push } = require('firebase/database');
+const CHALLENGE_PER_WEEK = 3; // یا هر تعداد سوال دلخواه
+const CHALLENGE_TIMEOUT = 10000; // ده ثانیه
 const challengeQuestions = JSON.parse(fs.readFileSync('./challenge.json', 'utf8'));
 const app = express();
 
@@ -14,7 +16,6 @@ const port = process.env.PORT || 10000;
 let botActive = true
 
 const challengeState = {}; // userId -> وضعیت فعلی چالش
-const CHALLENGE_PER_WEEK}`);
 function getCurrentWeekString() {
   const now = new Date();
   const onejan = new Date(now.getFullYear(), 0, 1);
@@ -28,7 +29,7 @@ const firebaseConfig = {
 };
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
-
+const challengeUserRef = (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`);
 // ---- User Helper Functions ----
 const userRef = userId => ref(db, `users/${userId}`);
 async function ensureUser(user) {
@@ -459,6 +460,43 @@ if (data === 'activate_bot' && userId === adminId) {
   return;
 }
 
+  if (query.data.startsWith('challenge_answer_')) {
+    const state = challengeState[userId];
+    if (!state || state.finished) return;
+
+    const [_, qIdxStr, ansIdxStr] = query.data.split('_');
+    const qIdx = parseInt(qIdxStr), ansIdx = parseInt(ansIdxStr);
+
+    // فقط اگر سوال جاری است
+    if (!state.waitingFor || state.waitingFor.qIdx !== qIdx) return;
+
+    // اگر قبلاً جواب داده یا تایم تموم شده
+    if (state.waitingFor.answeredFlag()) {
+      await bot.answerCallbackQuery(query.id, { text: 'این سوال تمام شده است.', show_alert: false });
+      return;
+    }
+
+    state.waitingFor.answeredFlag = () => true; // جلوگیری از چند جواب
+    clearTimeout(state.waitingFor.timer);
+
+    const qObj = state.questions[qIdx];
+    const correct = qObj.answer === ansIdx;
+    if (correct) state.correct++;
+
+    state.results.push({ correct, timedOut: false });
+    if (correct) {
+      await updatePoints(userId, 2);
+      await bot.answerCallbackQuery(query.id, { text: `✅ درست جواب دادی! +2 امتیاز (${qIdx+1}/${state.questions.length})`, show_alert: false });
+      await bot.sendMessage(userId, `✅ درست جواب دادی! +2 امتیاز (${qIdx+1}/${state.questions.length})`);
+    } else {
+      await bot.answerCallbackQuery(query.id, { text: `❌ اشتباه بود! (${qIdx+1}/${state.questions.length})`, show_alert: false });
+      await bot.sendMessage(userId, `❌ اشتباه جواب دادی! (${qIdx+1}/${state.questions.length})`);
+    }
+
+    setTimeout(() => nextChallengeOrFinish(userId), CHALLENGE_TIMEOUT - 200);
+  }
+});
+
   // ---- Anti-Spam ----
   if (userId !== adminId) {
     if (isMuted(userId)) {
@@ -879,43 +917,6 @@ if (!botActive && msg.from.id !== adminId) {
     return bot.sendMessage(userId, 'شما بن شده‌اید و اجازه استفاده ندارید.');
   }
 
-  if (query.data.startsWith('challenge_answer_')) {
-    const state = challengeState[userId];
-    if (!state || state.finished) return;
-
-    const [_, qIdxStr, ansIdxStr] = query.data.split('_');
-    const qIdx = parseInt(qIdxStr), ansIdx = parseInt(ansIdxStr);
-
-    // فقط اگر سوال جاری است
-    if (!state.waitingFor || state.waitingFor.qIdx !== qIdx) return;
-
-    // اگر قبلاً جواب داده یا تایم تموم شده
-    if (state.waitingFor.answeredFlag()) {
-      await bot.answerCallbackQuery(query.id, { text: 'این سوال تمام شده است.', show_alert: false });
-      return;
-    }
-
-    state.waitingFor.answeredFlag = () => true; // جلوگیری از چند جواب
-    clearTimeout(state.waitingFor.timer);
-
-    const qObj = state.questions[qIdx];
-    const correct = qObj.answer === ansIdx;
-    if (correct) state.correct++;
-
-    state.results.push({ correct, timedOut: false });
-    if (correct) {
-      await updatePoints(userId, 2);
-      await bot.answerCallbackQuery(query.id, { text: `✅ درست جواب دادی! +3 امتیاز (${qIdx+1}/${state.questions.length})`, show_alert: false });
-      await bot.sendMessage(userId, `✅ درست جواب دادی! +3 امتیاز (${qIdx+1}/${state.questions.length})`);
-    } else {
-      await bot.answerCallbackQuery(query.id, { text: `❌ اشتباه بود! (${qIdx+1}/${state.questions.length})`, show_alert: false });
-      await bot.sendMessage(userId, `❌ اشتباه جواب دادی! (${qIdx+1}/${state.questions.length})`);
-    }
-
-    setTimeout(() => nextChallengeOrFinish(userId), CHALLENGE_TIMEOUT - 200);
-  }
-});
-
   // ---- پاسخ به پشتیبانی توسط ادمین ----
   if (msg.reply_to_message && userId === adminId) {
     const replied = msg.reply_to_message;
@@ -1260,6 +1261,5 @@ let txt = `🎯 اسکواد: ${req.squad_name}\n🎭نقش مورد نیاز: $
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
-  });
-
+});
 })();
