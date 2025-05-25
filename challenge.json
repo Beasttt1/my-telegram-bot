@@ -1,43 +1,157 @@
 [
-  {"question": "کدام هیرو لقب 'King of Fighter' را دارد؟", "choices": ["Aldous", "Chou", "Lapu-Lapu", "Benedetta"], "answer": 1},
-  {"question": "کدام هیرو Ultimate به نام 'Falling Starmoon' دارد؟", "choices": ["Esmeralda", "Lunox", "Pharsa", "Harith"], "answer": 0},
-  {"question": "کدام آیتم برای افزایش Physical Attack مناسب است؟", "choices": ["Blood Wings", "Berserker's Fury", "Thunder Belt", "Dominance Ice"], "answer": 1},
-  {"question": "کدام هیرو نقش SUPPORT دارد؟", "choices": ["Angela", "Zilong", "Aulus", "Brody"], "answer": 0},
-  {"question": "کدام مپ Classic و Ranked را شامل می‌شود؟", "choices": ["Western Expanse", "Celestial Palace", "Imperial Sanctuary", "Sacred Statue"], "answer": 2},
-  {"question": "کدام اسپل برای فرار یا تعقیب کاربردی است؟", "choices": ["Vengeance", "Flicker", "Revitalize", "Aegis"], "answer": 1},
-{"question": "بهترین هیرو برای Jungle", "choices": ["Gusion", "Layla", "Lolita", "Eudora"], "answer": 0},
-  {"question": "کدام هیرو لقب 'Dawn's Light' دارد؟", "choices": ["Miya", "Lylia", "Silvanna", "Granger"], "answer": 0},
-  {"question": "کدام نقش معمولاً بیشترین HP را دارد؟", "choices": ["Assassin", "Marksman", "Tank", "Mage"], "answer": 2},
-  {"question": "کدام آیتم ضد Heal است؟", "choices": ["Necklace of Durance", "Windtalker", "Blade of Despair", "Endless Battle"], "answer": 0},
-  {"question": "کدام هیرو قابلیت نامرئی شدن دارد؟", "choices": ["Natalia", "Franco", "Aurora", "Lancelot"], "answer": 0},
-  {"question": "کدام آیتم Mana Regeneration می‌دهد؟", "choices": ["Enchanted Talisman", "Immortality", "Wings of the Apocalypse Queen", "Rose Gold Meteor"], "answer": 0},
-  {"question": "کدام هیرو با Ultimate خود دشمن را به هوا پرتاب می‌کند؟", "choices": ["Chou", "Claude", "Karina", "Kaja"], "answer": 0},
-  {"question": "کدام اصطلاح به معنای حمله دسته جمعی است؟", "choices": ["Gank", "Farm", "Push", "Feed"], "answer": 0},
-  {"question": "کدام هیرو قابلیت احضار Shadow دارد؟", "choices": ["Hayabusa", "Moskov", "Cyclops", "Grock"], "answer": 0},
-  {"question": "کدام Rank بعد از Epic قرار دارد؟", "choices": ["Legend", "Grandmaster", "Mythic", "Warrior"], "answer": 0},
-  {"question": "کدام Spell برای حذف Control Effects مناسب است؟", "choices": ["Purify", "Retribution", "Inspire", "Sprint"], "answer": 0},
-  {"question": "کدام آیتم برای افزایش Attack Speed مناسب است؟", "choices": ["Swift Boots", "Courage Mask", "Demon Hunter Sword", "Athena's Shield"], "answer": 2},
-  {"question": "کدام هیرو قابلیت Heal گروهی دارد؟", "choices": ["Estes", "Franco", "Claude", "Hylos"], "answer": 0},
-  {"question": "کدام نقش مناسب Lane EXP است؟", "choices": ["Tank", "Fighter", "Support", "Marksman"], "answer": 1},
-
-  {"question": "کدام هیرو نقش Assassin دارد؟", "choices": ["Layla", "Fanny", "Balmond", "Clint"], "answer": 1},
-  {"question": "کدام هیرو Ultimate با نام 'Way of Dragon' دارد؟", "choices": ["Chou", "Aldous", "Hayabusa", "Karina"], "answer": 0},
-  {"question": "کدام آیتم دفاعی است؟", "choices": ["Blade of Despair", "Immortality", "Scarlet Phantom", "Malefic Roar"], "answer": 1},
-  {"question": "کدام هیرو قابلیت احیای خودکار ندارد؟", "choices": ["Franco", "Bane", "Alpha", "Guinevere"], "answer": 0},
-  {"question": "کدام نقش بیشترین Damage را می‌دهد؟", "choices": ["Tank", "Marksman", "Support", "Mage"], "answer": 1},
-  {"question": "کدام اسپل برای Farming Jungle استفاده می‌شود؟", "choices": ["Execute", "Retribution", "Arrival", "Flicker"], "answer": 1},
-  {"question": "کدام آیتم Attack Speed ندارد؟", "choices": ["Windtalker", "Corrosion Scythe", "Blood Wings", "Demon Hunter Sword"], "answer": 2},
-  {"question": "کدام هیرو قابلیت حرکت سریع در نقشه دارد؟", "choices": ["Johnson", "Rafaela", "Franco", "Cyclops"], "answer": 0},
-  {"question": "کدام Rank پایین‌ترین است؟", "choices": ["Warrior", "Epic", "Legend", "Mythic"], "answer": 0},
-  {"question": "کدام آیتم برای Mana بیشتر است؟", "choices": ["Enchanted Talisman", "Windtalker", "Endless Battle", "Thunder Belt"], "answer": 0},
-  {"question": "کدام هیرو Ultimate با نام 'Shadow Kill' دارد؟", "choices": ["Saber", "Hayabusa", "Ling", "Helcurt"], "answer": 1},
-  {"question": "کدام هیرو قابلیت احیای هم‌تیمی دارد؟", "choices": ["Estes", "Angela", "Franco", "Uranus"], "answer": 0},
-  {"question": "کدام آیتم HP Regen می‌دهد؟", "choices": ["Oracle", "Rose Gold Meteor", "Hunter Strike", "Wind of Nature"], "answer": 0},
-  {"question": "کدام نقش در Lane Gold مناسب است؟", "choices": ["Tank", "Assassin", "Marksman", "Support"], "answer": 2},
-  {"question": "کدام هیرو با Ultimate خود دشمن را گیج می‌کند؟", "choices": ["Valir", "Guinevere", "Hanabi", "Lylia"], "answer": 1},
-  {"question": "کدام اسپل برای افزایش سرعت حمله است؟", "choices": ["Inspire", "Sprint", "Aegis", "Flameshot"], "answer": 0},
-  {"question": "کدام آیتم از Magic Damage محافظت می‌کند؟", "choices": ["Athena's Shield", "Blade Armor", "Windtalker", "Dreadnaught Armor"], "answer": 0},
-  {"question": "کدام نقش بیشترین Crowd Control دارد؟", "choices": ["Tank", "Marksman", "Fighter", "Assassin"], "answer": 0},
-  {"question": "کدام آیتم برای Lifesteal مناسب است؟", "choices": ["Endless Battle", "Thunder Belt", "Courage Mask", "Ice Queen Wand"], "answer": 0},
-  {"question": "کدام هیرو قابلیت جاخالی دادن به اسپل‌ها دارد؟", "choices": ["Lancelot", "Bane", "Argus", "Zilong"], "answer": 0}
+  {
+    "question": "کدام نقش بیشترین HP را معمولاً در Mobile Legends دارد؟",
+    "choices": ["Assassin", "Mage", "Tank", "Marksman"],
+    "answer": 2
+  },
+  {
+    "question": "آلتیمیت هیرو Layla چیست؟",
+    "choices": ["Malefic Bomb", "Destruction Rush", "Void Projectile", "Power Shot"],
+    "answer": 1
+  },
+  {
+    "question": "کدام آی است؟",
+    "choices": ["Blade of Despair", "Swift Boots", "Immortality", "Athena's Shield"],
+    "answer": 1
+  },
+  {
+    "question": "کدام هیرو بیشتر نقش ساپورت را دارد؟",
+    "choices": ["Angela", "Lancelot", "Hayabusa", "Granger"],
+    "answer": 0
+  },
+  {
+    "question": "چه کسی سازنده بازی Mobile Legends است؟",
+    "choices": ["Tencent", "Moonton", "Garena", "Riot Games"],
+    "answer": 1
+  },
+  {
+    "question": "کدام نقش وظیفه فارم جنگل را دارد؟",
+    "choices": ["Tank", "Jungler", "EXP Laner", "Gold Laner"],
+    "answer": 1
+  },
+  {
+    "question": "چه آیتمی ضد CC است؟",
+    "choices": ["Oracle "Tough Boots", "Cursed Helmet"],
+    "answer": 2
+  },
+  {
+    "question": "هیرو 'Gusion' چه نقشی دارد؟",
+    "choices": ["Tank", "Fighter", "Assassin", "Marksman"],
+    "answer": 2
+  },
+  {
+    "question": "بیشترین دمیج را کدام نقش می‌دهد؟",
+    "choices": ["Tank", "Support", "Marksman", "Roamer"],
+    "answer": 2
+  },
+  {
+    "question": "کدام آیتم برای بازیابی HP مناسب است؟",
+    "choices": ["Bloodlust Axe", "Swift Boots", "Endless Battle", "Dominance Ice"],
+    "answer": 0
+  },
+  {
+    "question": "رتبه Legend بالاتر است یا Epic؟",
+    "choices": ["Epic", "Legend", "هر دو یکی‌اند", "Mythic"],
+    "answer": 1
+  },
+  {
+    "question": "کدام لاین برای Gold Laner مناسب است؟",
+    "choices": ["Top", "Mid", "Gold Lane", "EXP Lane"],
+    "answer": 2
+  },
+  {
+    "question": "آیکون کدام نقش یک شمشیر است؟",
+    "choices": ["Fighter", "Tank", "Mage", "Assassin"],
+    "answer": 0
+  },
+  {
+    "question": "کدام هیرو Mage است؟",
+    "choices": ["Valir", "Granger", "Bruno", "Baxia"],
+    "answer": 0
+  },
+  {
+    "question": "کدام هیرو قابلیت نامرئی شدن دارد؟",
+    "choices": ["Natalia", "Franco", "Esmeralda", "Aldous"],
+    "answer": 0
+  },
+  {
+    "question": "کدام آیتم برای جلوگیری از مرگ است؟",
+    "choices": ["Immortality", "Blade of Despair", "Hunter Strike", "Clock of Destiny"],
+    "answer": 0
+  },
+  {
+    "question": "کدام نقش معمولاً در وسط نقشه بازی می‌کند؟",
+    "choices": ["Gold Laner", "EXP Laner", "Mid Laner", "Roamer"],
+    "answer": 2
+  },
+  {
+    "question": "کدام نقش اغلب در گنک نقش دارد؟",
+    "choices": ["Marksman", "Jungler", "EXP Laner", "Gold Laner"],
+    "answer": 1
+  },
+  {
+    "question": "کدام اسکین رایگان است؟",
+    "choices": ["Elite", "Epic", "Basic", "Legend"],
+    "answer": 2
+  },
+  {
+    "question": "نام Event معروف تابستانی چیست؟",
+    "choices": ["Starlight", "Summer Carnival", "Lucky Spin", "M2"],
+    "answer": 1
+  },
+  {
+    "question": "کدام آیتم برای مانا مناسب است؟",
+    "choices": ["Concentrated Energy", "Thunder Belt", "Enchanted Talisman", "Endless Battle"],
+    "answer": 2
+  },
+  {
+    "question": "کدام نقش سریع‌ترین فارم را دارد؟",
+    "choices": ["Support", "Jungler", "Tank", "EXP Laner"],
+    "answer": 1
+  },
+  {
+    "question": "کدام قابلیت برای فرار مناسب است؟",
+    "choices": ["Flicker", "Sprint", "Revitalize", "Retribution"],
+    "answer": 0
+  },
+  {
+    "question": "کدام آیتم HP را افزایش می‌دهد؟",
+    "choices": ["Bloodlust Axe", "Blade Armor", "Cursed Helmet", "Hunter Strike"],
+    "answer": 2
+  },
+  {
+    "question": "کدام حالت بازی ۵v۵ نیست؟",
+    "choices": ["Classic", "Ranked", "Brawl", "Mayhem"],
+    "answer": 2
+  },
+  {
+    "question": "کدام آیتم برای کاهش CD مناسب است؟",
+    "choices": ["Fleeting Time", "Thunder Belt", "Endless Battle", "Athena's Shield"],
+    "answer": 0
+  },
+  {
+    "question": "کدام اصطلاح برای گنک استفاده می‌شود؟",
+    "choices": ["AFK", "Feed", "Roam", "Gank"],
+    "answer": 3
+  },
+  {
+    "question": "کدام هیرو قابلیت Heal گروهی دارد؟",
+    "choices": ["Rafaela", "Franco", "Miya", "Lancelot"],
+    "answer": 0
+  },
+  {
+    "question": "کدام آیتم دمیج فیزیکی می‌دهد؟",
+    "choices": ["Endless Battle", "Ice Queen Wand", "Dominance Ice", "Enchanted Talisman"],
+    "answer": 0
+  },
+  {
+    "question": "بیشترین گلد را کدام لاین می‌دهد؟",
+    "choices": ["EXP Lane", "Jungle", "Gold Lane", "Mid Lane"],
+    "answer": 2
+  },
+  {
+    "question": "کدام نقش معمولاً Ward می‌خرد؟",
+    "choices": ["Roamer", "Jungler", "EXP Laner", "Gold Laner"],
+    "answer": 0
+  }
 ]
