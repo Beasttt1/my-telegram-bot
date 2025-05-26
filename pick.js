@@ -1,5 +1,5 @@
 const fs = require("fs");
-const { get, ref } = require("firebase/database");
+const { get, set, ref } = require("firebase/database");
 
 const heroes = JSON.parse(fs.readFileSync("./heroes.json", "utf8"));
 
@@ -45,12 +45,33 @@ async function handlePickCommand(userId, bot, db) {
   });
 }
 
-// هندل رول و نمایش هیرو
+// تایید خرید دائمی و فعال‌سازی
+async function handlePickAccessConfirmation(userId, bot, db, getUser, updatePoints, query) {
+  const user = await getUser(userId);
+  const points = user?.points || 0;
+
+  if (points >= 3) {
+    await updatePoints(userId, -3);
+    await set(ref(db, `pick_access/${userId}`), { paid: true });
+    await bot.sendMessage(userId, "✅ شما با پرداخت ۳ امتیاز، دسترسی دائمی به این بخش پیدا کردید.");
+  } else {
+    await bot.sendMessage(userId, "❌ برای فعال‌سازی دائمی این بخش، حداقل ۳ امتیاز نیاز دارید.");
+    return;
+  }
+
+  await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id
+  });
+
+  await handlePickCommand(userId, bot, db); // بازگشت به منوی رول‌ها
+}
+
+// نمایش هیروی رندوم بعد از انتخاب رول
 async function handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db) {
   const role = data.replace("pick_", "").toLowerCase();
   const filtered = heroes.filter((h) => h.role.toLowerCase() === role);
 
-  // بستن پنجره رول‌ها
   await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
     chat_id: query.message.chat.id,
     message_id: query.message.message_id
@@ -84,5 +105,6 @@ async function handlePickRole(userId, data, bot, updatePoints, pickSettings, que
 
 module.exports = {
   handlePickCommand,
+  handlePickAccessConfirmation,
   handlePickRole
 };
