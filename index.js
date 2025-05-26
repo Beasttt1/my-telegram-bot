@@ -373,14 +373,19 @@ if (data.startsWith('pick_')) {
   const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
   const pickSettings = pickSettingsSnap.exists() ? pickSettingsSnap.val() : false;
 
+  const isManagementAction = data === 'pick_settings' || data.startsWith('pick_set_');
+  if (!isManagementAction) {
+    await handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db, getUser);
+    return;
+  }
+}
+
 
 
   // فقط اگر این دکمه مربوط به پنل مدیریت نبود، بریم سمت هندل
   const isManagementAction = data === 'pick_settings' || data.startsWith('pick_set_');
   if (!isManagementAction) {
-  await handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db); // db را اینجا اضافه کن
-  return;
-}
+  
 
 }
 
@@ -422,7 +427,7 @@ if (query.data === 'challenge') {
   // ...
   
   // تأیید پرداخت ۳ امتیاز برای فعال‌سازی دائمی رندوم پیک
-if (data === 'pick_pay_confirm') {
+if (data === 'pick_once_confirm') {
   const user = await getUser(userId);
   const points = user?.points || 0;
 
@@ -440,6 +445,11 @@ if (data === 'pick_pay_confirm') {
     message_id: query.message.message_id
   });
 
+  return;
+}
+
+if (data === 'cancel_pick_access') {
+  await bot.sendMessage(userId, 'درخواست لغو شد.');
   return;
 }
 
