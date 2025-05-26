@@ -6,7 +6,7 @@ const { getDatabase, ref, set, get, update, remove, push } = require('firebase/d
 
 const app = express();
 const { startChallenge, handleAnswer } = require('./challenge');
-const { sendNews } = require('./news');
+const sendNews = require('./news').sendNews; // این هم درسته
 const { handlePickCommand, handlePickRole, handlePickAccessConfirmation } = require('./pick');
 // فرض بر این است که bot, db, updatePoints, adminId قبلاً تعریف شده دکمه‌ها (callback_query):
 const token = process.env.BOT_TOKEN;
