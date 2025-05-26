@@ -394,14 +394,25 @@ if (blockedBtn && !(await isButtonEnabled(data)) && userId !== adminId) {
     const lastUsed = cooldownSnap.val();
     const secondsPassed = Math.floor((now - lastUsed) / 1000);
 
-    if (secondsPassed < 300) { // 300 ثانیه = 5 دقیقه
+    if (secondsPassed < 300) { // 5 دقیقه
       await bot.answerCallbackQuery(query.id, {
         text: `⏱ لطفاً ${300 - secondsPassed} ثانیه دیگر صبر کنید.`,
         show_alert: true
       });
-      return;
+      return; // اینجا خیلی مهمه که از اجرای ادامه جلوگیری کنی
     }
   }
+
+  // اگر اینجا اومد یعنی اجازه داری خبر رو بفرستی
+  await sendNews(bot, userId);
+
+  // زمان کلیک جدید رو ذخیره کن
+  await set(cooldownRef, now);
+
+  // پاسخ callback رو بفرست تا دکمه دیگه لود نشه
+  await bot.answerCallbackQuery(query.id);
+  return;
+}
   
 if (data === 'deactivate_bot' && userId === adminId) {
   await setBotActiveStatus(false);
@@ -568,11 +579,6 @@ if (data.startsWith('toggle_btn_') && userId === adminId) {
       return;
     }
   }
-  
-if (data === 'ml_news') {
-  await sendNews(bot, userId);
-  return;
-}
 
   await set(cooldownRef, now); // ثبت زمان جدید
   await sendNews(bot, userId); // نمایش خبرها
