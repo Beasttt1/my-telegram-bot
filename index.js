@@ -400,12 +400,16 @@ if (data === 'pick_set_deduct_no' && userId === adminId) {
 }
 
 if (data.startsWith('pick_role_')) {
-  // حذف اینلاین کیبورد (بستن پنجره شیشه‌ای)
+  // حذف اینلاین کیبورد
   if (query.message) {
-    await bot.editMessageReplyMarkup(
-      { inline_keyboard: [] },
-      { chat_id: query.message.chat.id, message_id: query.message.message_id }
-    );
+    try {
+      await bot.editMessageReplyMarkup(
+        { inline_keyboard: [] },
+        {
+          chat_id: query.message.chat.id,
+          message_id: (e) {
+      console.error("editMessageReplyMarkup error:", e);
+    }
   }
   await bot.answerCallbackQuery(query.id);
   await handlePickRole(userId, data, bot, updatePoints, pickSettings);
