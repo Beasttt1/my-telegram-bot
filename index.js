@@ -13,7 +13,24 @@ const adminId = Number(process.env.ADMIN_ID);
 const webhookUrl = process.env.WEBHOOK_URL;
 const port = process.env.PORT || 10000;
 let botActive = true
-
+const MENU_BUTTONS = [
+  { key: 'calculate_rate', label: '📊محاسبه ریت' },
+  { key: 'calculate_wl', label: '🏆محاسبه برد و باخت' },
+  { key: 'hero_counter', label: '⚔ هیرو کانتر' },
+  { key: 'tournament', label: '🧩 تورنومنت' },
+  { key: 'pickban_list', label: '📜 لیست پیک/بن' },
+  { key: 'pick_hero', label: '🎯 رندوم پیک' },
+  { key: 'challenge', label: '🔥 چالش' },
+  { key: 'referral', label: '🔗دعوت دوستان' },
+  { key: 'profile', label: '👤 پروفایل' },
+  { key: 'squad_request', label: '➕ ثبت درخواست اسکواد' },
+  { key: 'view_squads', label: '👥 مشاهده اسکوادها' },
+  { key: 'support', label: '💬پشتیبانی' },
+  { key: 'help', label: '📚راهنما' },
+  { key: 'buy', label: '💰خرید امتیاز' },
+  { key: 'chance', label: '🍀 شانس' },
+  { key: 'gift_code', label: '🎁 کد هدیه' }
+];
 // ---- Firebase Config ----
 const firebaseConfig = {
   databaseURL: process.env.DATABASE_URL,
@@ -41,6 +58,10 @@ async function ensureUser(user) {
 async function getUser(userId) {
   const snap = await get(userRef(userId));
   return snap.exists() ? snap.val() : null;
+}
+async function isButtonEnabled(btnKey) {
+  const snap = await get(ref(db, `settings/buttons/${btnKey}`));
+  return !snap.exists() || snap.val() === true;
 }
 async function updatePoints(userId, amount) {
   const user = await getUser(userId);
@@ -326,6 +347,9 @@ bot.onText(/\/panel/, async (msg) => {
           { text: '🗑 حذف اسکواد تاییدشده', callback_data: 'admin_delete_approved_squads' }
         ],
         [
+                  { text: '🛠 مدیریت دکمه‌های ربات', callback_data: 'admin_buttons_manage' }
+        ],
+        [
                           { text: '🎲 مدیریت رندوم پیک', callback_data: 'pick_settings' }
         ],
         [
@@ -346,6 +370,10 @@ bot.on('callback_query', async (query) => {
   const userId = query.from.id;
   const data = query.data;
   const messageId = query.message && query.message.message_id;
+  const blockedBtn = MENU_BUTTONS.find(btn => btn.key === data);
+if (blockedBtn && !(await isButtonEnabled(data)) && userId !== adminId) {
+  return bot.answerCallbackQuery(query.id, { text: 'این بخش موقتا از دسترس خارج شده', show_alert: true });
+}
   const validPickRoles = ['pick_XP', 'pick_Gold', 'pick_Mid', 'pick_Roamer', 'pick_Jungle'];
   const currentText = query.message.text;
   const currentMarkup = query.message.reply_markup || null;
@@ -464,6 +492,47 @@ if (data === 'cancel_pick_access') {
   return;
 }
 
+// نمایش منوی مدیریت دکمه‌ها
+if (data === 'admin_buttons_manage' && userId === adminId) {
+  const snap = await get(ref(db, 'settings/buttons'));
+  const states = snap.exists() ? snap.val() : {};
+  const keyboard = MENU_BUTTONS.map(btn => [
+    {
+      text: (states[btn.key] === false ? '🔴 ' : '🟢 ') + btn.label,
+      callback_data: `toggle_btn_${btn.key}`
+    }
+  ]);
+  keyboard.push([{ text: 'بازگشت', callback_data: 'panel_back' }]);
+  await bot.sendMessage(userId, 'وضعیت دکمه‌های ربات:', {
+    reply_markup: { inline_keyboard: keyboard }
+  });
+  return;
+}
+
+// روشن/خاموش کردن هر دکمه توسط ادمین
+if (data.startsWith('toggle_btn_') && userId === adminId) {
+  const btnKey = data.replace('toggle_btn_', '');
+  const btnRef = ref(db, `settings/buttons/${btnKey}`);
+  const snap = await get(btnRef);
+  const current = snap.exists() ? snap.val() : true;
+  await set(btnRef, !current);
+
+  // بازخوانی وضعیت جدید
+  const snapAll = await get(ref(db, 'settings/buttons'));
+  const states = snapAll.exists() ? snapAll.val() : {};
+  const keyboard = MENU_BUTTONS.map(btn => [
+    {
+      text: (states[btn.key] === false ? '🔴 ' : '🟢 ') + btn.label,
+      callback_data: `toggle_btn_${btn.key}`
+    }
+  ]);
+  keyboard.push([{ text: 'بازگشت', callback_data: 'panel_back' }]);
+  await bot.editMessageReplyMarkup(
+    { inline_keyboard: keyboard },
+    { chat_id: query.message.chat.id, message_id: query.message.message_id }
+  );
+  return;
+}
 
   // ---- Anti-Spam ----
   if (userId !== adminId) {
