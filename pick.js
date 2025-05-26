@@ -71,6 +71,32 @@ async function handlePickAccessConfirmation(userId, bot, db, getUser, updatePoin
 async function handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db) {
   const role = data.replace("pick_", "").toLowerCase();
   const filtered = heroes.filter((h) => h.role.toLowerCase() === role);
+  
+  const banSnap = await get(ref(db, `banned_pick/${userId}`));
+  if (banSnap.exists() && banSnap.val().until > now) {
+    const waitMin = Math.ceil((banSnap.val().until - now) / 60000);
+    await bot.sendMessage(userId, `⛔ به دلیل کلیک‌های مکرر، شما تا ${waitMin} دقیقه نمی‌توانید از این بخش استفاده کنید.`);
+    return;
+  }
+
+  // ۲. بررسی ضد اسپم (۴ بار در ۸ ثانیه = ۱۰ دقیقه بن)
+  const spamRef = ref(db, `antiSpam_pick/${userId}`);
+  const spamSnap = await get(spamRef);
+  let clicks = spamSnap.exists() ? spamSnap.val() : [];
+
+  clicks = clicks.filter(ts => now - ts < 8000); // فقط کلیک‌های ۸ ثانیه اخیر
+  clicks.push(now);
+
+  if (clicks.length >= 4) {
+    await set(ref(db, `banned_pick/${userId}`), { until: now + 10 * 60 * 1000 }); // ۱۰ دقیقه بن
+    await bot.sendMessage(userId, '🚫 شما بیش از حد سریع کلیک کردید! این بخش به مدت ۱۰ دقیقه برای شما غیرفعال شد.');
+    return;
+  } else {
+    await set(spamRef, clicks);
+  }
+
+  // ۳. ادامه کد قبلی...
+
 
 // محدودیت زمانی برای کلیک (هر ۶۰ ثانیه یک بار)
 const now = Date.now();
