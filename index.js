@@ -6,8 +6,8 @@ const { getDatabase, ref, set, get, update, remove, push } = require('firebase/d
 
 const app = express();
 const { startChallenge, handleAnswer } = require('./challenge');
+const { handlePickCommand, handlePickRole, pickSettings } = require('./pick');
 // فرض بر این است که bot, db, updatePoints, adminId قبلاً تعریف شده دکمه‌ها (callback_query):
-const { handlePick, pickSettings, handlePickRole } = require('./pick');
 const token = process.env.BOT_TOKEN;
 const adminId = Number(process.env.ADMIN_ID);
 const webhookUrl = process.env.WEBHOOK_URL;
@@ -20,6 +20,7 @@ const firebaseConfig = {
 };
 const firebaseApp = initializeApp(firebaseConfig);
 const db = getDatabase(firebaseApp);
+global.db = db; // بعد از تعریف db این خط را اضافه کن
 
 // ---- User Helper Functions ----
 const userRef = userId => ref(db, `users/${userId}`);
@@ -186,7 +187,7 @@ function mainMenuKeyboard() {
       { text: '📜 لیست پیک/بن', callback_data: 'pickban_list' }
     ],
     [
-          { text: '🎯 رندوم پیک', callback_data: 'pick_hero' }
+              { text: '🎯 رندوم پیک', callback_data: 'pick_hero' }
         ],
         [
       { text: '🔥 چالش', callback_data: 'challenge' }
@@ -325,7 +326,7 @@ bot.onText(/\/panel/, async (msg) => {
           { text: '🗑 حذف اسکواد تاییدشده', callback_data: 'admin_delete_approved_squads' }
         ],
         [
-                  { text: '🎲 مدیریت رندوم پیک', callback_data: 'pick_settings' }
+                          { text: '🎲 مدیریت رندوم پیک', callback_data: 'pick_settings' }
         ],
         [
           { text: '📋 جزییات کاربران', callback_data: 'user_details' }
@@ -345,8 +346,6 @@ bot.on('callback_query', async (query) => {
   const userId = query.from.id;
   const data = query.data;
   const messageId = query.message && query.message.message_id;
-  const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
-  const pickSettings = pickSettingsSnap.exists() ? !!pickSettingsSnap.val() : false;
   const currentText = query.message.text;
   const currentMarkup = query.message.reply_markup || null;
 
@@ -363,25 +362,21 @@ if (data === 'activate_bot' && userId === adminId) {
   return;
 }
 
-// کلیک روی دکمه «رندوم پیک»
+// دکمه رندوم پیک
+if (data === 'pick_hero') {
+  await handlePickCommand(userId, bot);
+  return;
+}
 
-  // دکمه رندوم پیک
-  if (data === 'pick_hero') {
-    await handlePickCommand(userId, bot);
-    return;
-  }
+// انتخاب رول و دادن هیرو
+if (data.startsWith('pick_role_')) {
+  await handlePickRole(userId, data, bot, updatePoints, pickSettings);
+  return;
+}
 
-  // هندل انتخاب رول
-  if (data.startsWith('pick_role_')) {
-    await handlePickRole(userId, data, bot, updatePoints, pickSettings);
-    return;
-  }
-
-  // سایر هندل‌ها...
-
-
+// مدیریت رندوم پیک توسط ادمین
 if (data === 'pick_settings' && userId === adminId) {
-  await bot.sendMessage(userId, `آیا زدن روی دکمه رندوم پیک باید امتیاز کم کند؟`, {
+  await bot.sendMessage(userId, 'آیا زدن روی دکمه رندوم پیک باید امتیاز کم کند؟', {
     reply_markup: {
       inline_keyboard: [
         [{ text: 'بله، کم کند', callback_data: 'pick_set_deduct_yes' }],
@@ -393,7 +388,6 @@ if (data === 'pick_settings' && userId === adminId) {
   await bot.answerCallbackQuery(query.id);
   return;
 }
-
 if (data === 'pick_set_deduct_yes' && userId === adminId) {
   await pickSettings.setDeduct(true);
   await bot.sendMessage(userId, '✅ تنظیم شد: زدن روی دکمه رندوم پیک امتیاز کم می‌کند.');
