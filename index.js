@@ -7,7 +7,7 @@ const { getDatabase, ref, set, get, update, remove, push } = require('firebase/d
 const app = express();
 const { startChallenge, handleAnswer } = require('./challenge');
 // فرض بر این است که bot, db, updatePoints, adminId قبلاً تعریف شده دکمه‌ها (callback_query):
-
+const { handlePick, pickSettings, handlePickRole } = require('./pick');
 const token = process.env.BOT_TOKEN;
 const adminId = Number(process.env.ADMIN_ID);
 const webhookUrl = process.env.WEBHOOK_URL;
@@ -186,6 +186,9 @@ function mainMenuKeyboard() {
       { text: '📜 لیست پیک/بن', callback_data: 'pickban_list' }
     ],
     [
+          { text: '🎯 رندوم پیک', callback_data: 'pick_hero' }
+        ],
+        [
       { text: '🔥 چالش', callback_data: 'challenge' }
     ],
     [
@@ -322,6 +325,9 @@ bot.onText(/\/panel/, async (msg) => {
           { text: '🗑 حذف اسکواد تاییدشده', callback_data: 'admin_delete_approved_squads' }
         ],
         [
+                  { text: '🎲 مدیریت رندوم پیک', callback_data: 'pick_settings' }
+        ],
+        [
           { text: '📋 جزییات کاربران', callback_data: 'user_details' }
         ]
       ]
@@ -352,6 +358,43 @@ if (data === 'deactivate_bot' && userId === adminId) {
 if (data === 'activate_bot' && userId === adminId) {
   await setBotActiveStatus(true);
   await bot.answerCallbackQuery(query.id, { text: 'ربات برای کاربران عادی روشن شد.' });
+  return;
+}
+
+// کلیک روی دکمه «رندوم پیک»
+if (data === 'random_pick') {
+  await handlePick(userId, bot, pickSettings, updatePoints);
+  return;
+}
+
+// هندل رول انتخاب شده
+if (data.startsWith('pick_role_')) {
+  await handlePickRole(userId, data, bot, updatePoints, pickSettings);
+  return;
+}
+
+if (data === 'pick_settings' && userId === adminId) {
+  await bot.sendMessage(userId, `آیا زدن روی دکمه رندوم پیک باید امتیاز کم کند؟`, {
+    reply_markup: {
+      inline_keyboard: [
+        [{ text: 'بله، کم کند', callback_data: 'pick_set_deduct_yes' }],
+        [{ text: 'نه، رایگان باشد', callback_data: 'pick_set_deduct_no' }],
+        [{ text: 'بازگشت', callback_data: 'panel_back' }]
+      ]
+    }
+  });
+  await bot.answerCallbackQuery(query.id);
+  return;
+}
+
+if (data === 'pick_set_deduct_yes' && userId === adminId) {
+  await pickSettings.setDeduct(true);
+  await bot.sendMessage(userId, '✅ تنظیم شد: زدن روی دکمه رندوم پیک امتیاز کم می‌کند.');
+  return;
+}
+if (data === 'pick_set_deduct_no' && userId === adminId) {
+  await pickSettings.setDeduct(false);
+  await bot.sendMessage(userId, '✅ تنظیم شد: زدن روی دکمه رندوم پیک رایگان است.');
   return;
 }
 
