@@ -276,7 +276,7 @@ bot.onText(/\/start(?: (\d+))?/, async (msg, match) => {
       await update(userRef(userId), { invited_by: refId });
       await updatePoints(refId, 5);
       await update(userRef(refId), { invites: (refUser.invites || 0) + 1 });
-      bot.sendMessage(refId, `🎉 یک نفر با لینک دعوت شما وارد ربات شد و ۵ امتیاز گرفتید!`);
+      bot.sendMessage(refId, `🎉 یک نفر با لینک دعوت شما وارد ربات شد و 5 امتیاز گرفتید!`);
     }
   }
   userState[userId] = null;
@@ -396,7 +396,7 @@ const banSnap = await get(ref(db, `global_ban/${userId}`));
 const now = Date.now();
 if (banSnap.exists() && banSnap.val().until > now) {
   await bot.answerCallbackQuery(query.id, {
-    text: '⛔ شما به دلیل اسپم، تا ۱۰ دقیقه نمی‌توانید از ربات استفاده کنید.',
+    text: '⛔ شما به دلیل اسپم، تا 10 دقیقه نمی‌توانید از ربات استفاده کنید.',
     show_alert: true
   });
   return;
@@ -586,7 +586,7 @@ if (data === 'hero_counter') {
   // ---- بخش شانس ----
   if (data === 'chance') {
     await bot.answerCallbackQuery(query.id);
-    return bot.sendMessage(userId, '🍀 شانست رو انتخاب کن!\n\n🎲 اگر تاس بندازی و ۶ بیاد: ۲ امتیاز می‌گیری\n⚽ اگر پنالتی بزنی و گل بشه (GOAL): ۱ امتیاز می‌گیری\n🎯 اگر دارت بزنی و وسط هدف (BULLSEYE) بزنی: ۱ امتیاز می‌گیری\n\nیک گزینه رو انتخاب کن', {
+    return bot.sendMessage(userId, '🍀 شانست رو انتخاب کن!\n\n🎲 اگر تاس بندازی و 6 بیاد: 2 امتیاز می‌گیری\n⚽ اگر پنالتی بزنی و گل بشه: 1 امتیاز می‌گیری\n🎯 اگر دارت بزنی و وسط هدف بزنی: 1 امتیاز می‌گیری\n\nیک گزینه رو انتخاب کن', {
       reply_markup: {
         inline_keyboard: [
           [
@@ -605,7 +605,7 @@ if (data === 'hero_counter') {
     const now = Date.now();
     const lastUse = user.last_chance_use || 0;
     if (userId !== adminId && now - lastUse < 24 * 60 * 60 * 1000) {
-      await bot.answerCallbackQuery(query.id, { text: 'تا ۲۴ ساعت آینده نمی‌تونی دوباره امتحان کنی.', show_alert: true });
+      await bot.answerCallbackQuery(query.id, { text: 'تا 24 ساعت آینده نمی‌تونی دوباره امتحان کنی.', show_alert: true });
       return;
     }
     let emoji, winValue, prize, readable;
@@ -1176,7 +1176,7 @@ if (!botActive && msg.from.id !== adminId) {
     }
     userState[userId] = { step: 'confirm_squad_req', ...state };
     return bot.sendMessage(userId,
-      `درخواست شما:\n\nاسکواد: ${state.squad_name}\nنقش مورد نیاز: ${state.roles_needed}\nآیدی تلگرام لیدر: ${state.game_id}\nحداقل رنک: ${state.min_rank}\nتوضیحات: ${state.details}\n\nبا ثبت درخواست ۵ امتیاز از شما کسر می‌شود. تایید می‌کنید؟`,
+      `درخواست شما:\n\nاسکواد: ${state.squad_name}\nنقش مورد نیاز: ${state.roles_needed}\nآیدی تلگرام لیدر: ${state.game_id}\nحداقل رنک: ${state.min_rank}\nتوضیحات: ${state.details}\n\nبا ثبت درخواست 5 امتیاز از شما کسر می‌شود. تایید می‌کنید؟`,
       {
         reply_markup: {
           inline_keyboard: [
