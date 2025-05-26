@@ -243,12 +243,16 @@ function mainMenuKeyboard() {
     }
   };
 }
-function sendMainMenu(userId, messageId = null, currentText = null, currentMarkup = null) {
-  const text = 'سلام، به ربات محاسبه‌گر Mobile Legends خوش آمدید ✨';
+function sendMainMenu(userId, user = {}, messageId = null, currentText = null, currentMarkup = null) {
+  const name =
+    user.first_name ||
+    user.last_name ||
+    user.username ||
+    'کاربر عزیز';
+  const text = `سلام ${name}، به ربات محاسبه‌گر Mobile Legends خوش آمدید ✨`;
   const { reply_markup } = mainMenuKeyboard();
 
   if (messageId) {
-    // فقط اگر متن یا مارکاپ تغییر کرده باشد ویرایش کن
     if (text !== currentText || JSON.stringify(reply_markup) !== JSON.stringify(currentMarkup)) {
       bot.editMessageText(text, {
         chat_id: userId,
@@ -375,6 +379,8 @@ bot.on('callback_query', async (query) => {
   const userId = query.from.id;
   const data = query.data;
   const messageId = query.message && query.message.message_id;
+  userState[userId] = null;
+  sendMainMenu(userId, msg.from); // اینجا msg.from را اضافه کن
   const blockedBtn = MENU_BUTTONS.find(btn => btn.key === data);
 if (blockedBtn && !(await isButtonEnabled(data)) && userId !== adminId) {
   return bot.answerCallbackQuery(query.id, { text: 'این بخش موقتا از دسترس خارج شده', show_alert: true });
