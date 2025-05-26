@@ -369,10 +369,14 @@ if (data === 'pick_hero') {
 }
 
 // انتخاب رول و دادن هیرو
-if (data.startsWith('pick_role_')) {
-  await handlePickRole(userId, data, bot, updatePoints, pickSettings);
+if (data.startsWith('pick_')) {
+  const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
+  const pickSettings = pickSettingsSnap.exists() ? !!pickSettingsSnap.val() : false;
+
+  await handlePickRole(userId, data, bot, updatePoints, pickSettings, query);
   return;
 }
+
 
 // مدیریت رندوم پیک توسط ادمین
 if (data === 'pick_settings' && userId === adminId) {
@@ -396,23 +400,6 @@ if (data === 'pick_set_deduct_yes' && userId === adminId) {
 if (data === 'pick_set_deduct_no' && userId === adminId) {
   await pickSettings.setDeduct(false);
   await bot.sendMessage(userId, '✅ تنظیم شد: زدن روی دکمه رندوم پیک رایگان است.');
-  return;
-}
-
-if (data.startsWith('pick_role_')) {
-  // حذف اینلاین کیبورد
-  if (query.message) {
-    try {
-      await bot.editMessageReplyMarkup(
-        { inline_keyboard: [] },
-        {
-          chat_id: query.message.chat.id,
-          message_id: (e) {
-      console.error("editMessageReplyMarkup error:", e);
-    }
-  }
-  await bot.answerCallbackQuery(query.id);
-  await handlePickRole(userId, data, bot, updatePoints, pickSettings);
   return;
 }
 
