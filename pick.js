@@ -21,7 +21,7 @@ async function handlePickCommand(userId, bot) {
     ],
     [
       { text: 'Mid Lane', callback_data: 'pick_Mid' },
-      { text: 'Roamer', callback_data: 'pick_Roamer' },
+      { text: 'Roam', callback_data: 'pick_Roamer' },
       { text: 'Jungle', callback_data: 'pick_Jungle' }
     ]
   ];
