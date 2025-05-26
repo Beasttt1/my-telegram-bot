@@ -403,6 +403,25 @@ if (data.startsWith('pick_')) {
 
   const isManagementAction = data === 'pick_settings' || data.startsWith('pick_set_');
   if (!isManagementAction) {
+
+    // بررسی حالت once قبل از ادامه
+    if (pickSettings === 'once') {
+      const accessSnap = await get(ref(db, `pick_access/${userId}`));
+      const alreadyPaid = accessSnap.exists();
+      if (!alreadyPaid) {
+        await bot.sendMessage(userId, 'آیا مطمئن هستید که می‌خواهید با پرداخت ۳ امتیاز این بخش را برای همیشه فعال کنید؟', {
+          reply_markup: {
+            inline_keyboard: [
+              [{ text: 'بله، فعال‌سازی دائمی', callback_data: 'pick_once_confirm' }],
+              [{ text: 'خیر، بازگشت', callback_data: 'cancel_pick_access' }]
+            ]
+          }
+        });
+        return;
+      }
+    }
+
+    // اگر رایگان یا پولی بود یا پرداخت شده بود، ادامه بده
     await handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db, getUser);
     return;
   }
