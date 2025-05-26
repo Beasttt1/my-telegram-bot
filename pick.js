@@ -105,6 +105,6 @@ async function handlePickRole(userId, data, bot, updatePoints, pickSettings, que
 
 module.exports = {
   handlePickCommand,
-  handlePickAccessConfirmation,
-  handlePickRole
+  handlePickRole,
+  handlePickAccessConfirmation // این باید باشه
 };
