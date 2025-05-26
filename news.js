@@ -1,7 +1,7 @@
 const Parser = require('rss-parser');
 const parser = new Parser();
 
-async function sendMLNews(bot, userId) {
+async function sendNews(bot, userId) {
   try {
     const feed = await parser.parseURL('https://feeds.bbci.co.uk/news/rss.xml');
     const news = feed.items.slice(0, 5); // فقط ۵ خبر اول
