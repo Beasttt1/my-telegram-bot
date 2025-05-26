@@ -1,54 +1,67 @@
-const fs = require('fs');
+const fs = require("fs");
+const path = require("path");
+const { ref, get, set } = require("firebase/database");
 
-// بارگذاری لیست هیروها
-const heros = JSON.parse(fs.readFileSync('./heroes.json', 'utf8'));
+const heroes = JSON.parse(fs.readFileSync(path.join(__dirname, "heroes.json"), "utf8"));
 
-// رول به‌فارسی برای نمایش زیباتر
-const roleNames = {
-  XP: 'XP Lane',
-  Gold: 'Gold Lane',
-  Mid: 'Mid Lane',
-  Roamer: 'Roamer',
-  Jungle: 'Jungle'
-};
-
-// نمایش منوی انتخاب رول
 async function handlePickCommand(userId, bot) {
-  await bot.sendMessage(userId, 'کدام رول را می‌خواهید؟', {
-    reply_markup: {
-      inline_keyboard: [
-        [
-          { text: 'XP Lane', callback_data: 'pick_role_XP' },
-          { text: 'Gold Lane', callback_data: 'pick_role_Gold' }
-        ],
-        [
-          { text: 'Mid Lane', callback_data: 'pick_role_Mid' },
-          { text: 'Roamer', callback_data: 'pick_role_Roamer' },
-          { text: 'Jungle', callback_data: 'pick_role_Jungle' }
-        ]
-      ]
-    }
+  const roles = [
+    [{ text: "ایکس پی لاین", callback_data: "pick_role_xp" }],
+    [{ text: "مید لاین",     callback_data: "pick_role_mid" }],
+    [{ text: "گلد لاین",     callback_data: "pick_role_gold" }],
+    [{ text: "جنگل",         callback_data: "pick_role_jungle" }],
+    [{ text: "روم",          callback_data: "pick_role_roam" }]
+  ];
+  await bot.sendMessage(userId, "رول خود را انتخاب کنید:", {
+    reply_markup: { inline_keyboard: roles }
   });
 }
 
-// هندل انتخاب رول
 async function handlePickRole(userId, data, bot, updatePoints, pickSettings) {
-  const role = data.replace('pick_role_', '');
-  const filtered = heros.filter(h => h.role === role);
-  if (filtered.length === 0) {
-    await bot.sendMessage(userId, 'هیچ هیرویی برای این رول پیدا نشد.');
+  const role = data.replace("pick_role_", "");
+  const filtered = heroes.filter((h) => h.role === role);
+  if (!filtered.length) {
+    await bot.sendMessage(userId, "هیرویی برای این رول پیدا نشد!");
     return;
   }
   const hero = filtered[Math.floor(Math.random() * filtered.length)];
-  let message = `🎲 هیرو پیشنهادی برای ${roleNames[role]}:\n\n⭐ ${hero.name}`;
-  if (pickSettings && updatePoints) {
+  const shouldDeduct = typeof pickSettings?.getDeduct === "function"
+    ? await pickSettings.getDeduct()
+    : !!pickSettings;
+
+  if (shouldDeduct) {
     await updatePoints(userId, -1);
-    message += '\n\n❗ ۱ امتیاز بابت استفاده از این قابلیت کسر شد.';
+    await bot.sendMessage(
+      userId,
+      `هیروی تصادفی رول ${getRoleFa(role)}: ${hero.name}\n(۱ امتیاز از حساب شما کم شد)`
+    );
+  } else {
+    await bot.sendMessage(
+      userId,
+      `هیروی تصادفی رول ${getRoleFa(role)}: ${hero.name}\n(این بخش رایگان است)`
+    );
   }
-  await bot.sendMessage(userId, message);
 }
 
-module.exports = {
-  handlePickCommand,
-  handlePickRole
+function getRoleFa(role) {
+  switch (role) {
+    case "xp": return "ایکس پی لاین";
+    case "mid": return "مید لاین";
+    case "gold": return "گلد لاین";
+    case "jungle": return "جنگل";
+    case "roam": return "روم";
+    default: return role;
+  }
+}
+
+const pickSettings = {
+  async getDeduct() {
+    const snap = await get(ref(global.db, "settings/pick_deduct"));
+    return snap.exists() ? !!snap.val() : false;
+  },
+  async setDeduct(val) {
+    await set(ref(global.db, "settings/pick_deduct"), !!val);
+  }
 };
+
+module.exports = { handlePickCommand, handlePickRole, pickSettings };
