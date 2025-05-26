@@ -396,17 +396,18 @@ if (query.data === 'challenge') {
 }
 
 // جواب دادن به سوالات چالش
-if (query.data.startsWith('challenge_answer_')) {
-  await handleAnswer({
-    query,
-    bot,
-    updatePoints,
-    challengeUserRef: (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`),
-    db,
-    adminId
-  });
-  return;
-}
+  if (query.data.startsWith('challenge_answer_')) {
+    await handleAnswer({
+      query,
+      bot,
+      updatePoints,
+      challengeUserRef: (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`),
+      db,
+      adminId
+    });
+    return;
+  }
+  // ...
 
   // ---- Main menu back ----
   if (data === 'main_menu') {
