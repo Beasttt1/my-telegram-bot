@@ -1,60 +1,65 @@
-const { get, set, ref } = require('firebase/database');
+const { get } = require('firebase/database');
+const fs = require('fs');
 
-const pickSettings = {
-  async getDeduct(db) {
-    const snap = await get(ref(db, 'settings/pick_deduct'));
-    return snap.exists() ? snap.val() : false;
-  },
-  async setDeduct(value) {
-    await set(ref(global.db, 'settings/pick_deduct'), !!value);
-  }
-};
+const heros = JSON.parse(fs.readFileSync('./heros.json', 'utf-8'));
 
-const heroes = {
-  xp: ['Balmond', 'Dyroth', 'Lapu-Lapu'],
-  roam: ['Lolita', 'Minotaur', 'Tigreal'],
-  jungle: ['Ling', 'Hayabusa', 'Roger'],
-  gold: ['Brody', 'Beatrix', 'Miya'],
-  mid: ['Lylia', 'Yve', 'Kagura']
-};
+// رول‌های قابل پشتیبانی
+const roles = ['XP', 'Gold', 'Mid', 'Roamer', 'Jungle'];
 
-async function handlePick(userId, bot, settings, updatePoints) {
-  const deduct = await settings.getDeduct(global.db);
-  if (deduct) {
-    const snap = await get(ref(global.db, `users/${userId}`));
-    const user = snap.val();
-    if ((user.points || 0) < 1) {
-      return bot.sendMessage(userId, '❌ برای استفاده از این قابلیت باید حداقل ۱ امتیاز داشته باشید.');
-    }
-    await updatePoints(userId, -1);
-  }
+// مسیر تنظیمات سکه از Firebase
+const pickSettingsRef = ref => ref.child('settings/pick_settings');
 
-  await bot.sendMessage(userId, 'لطفاً رول مورد نظر را انتخاب کنید:', {
+// هندل کلیک اولیه روی دکمه رندوم پیک
+async function handlePickHero(bot, query, db) {
+  const userId = query.from.id;
+
+  await bot.answerCallbackQuery(query.id);
+  await bot.sendMessage(userId, 'کدام رول را می‌خواهید؟', {
     reply_markup: {
       inline_keyboard: [
         [
-          { text: 'XP', callback_data: 'pick_role_xp' },
-          { text: 'Roam', callback_data: 'pick_role_roam' }
+          { text: 'XP Lane', callback_data: 'pick_XP' },
+          { text: 'Gold Lane', callback_data: 'pick_Gold' }
         ],
         [
-          { text: 'Jungle', callback_data: 'pick_role_jungle' },
-          { text: 'Gold', callback_data: 'pick_role_gold' }
-        ],
-        [
-          { text: 'Mid', callback_data: 'pick_role_mid' }
+          { text: 'Mid Lane', callback_data: 'pick_Mid' },
+          { text: 'Roamer', callback_data: 'pick_Roamer' },
+          { text: 'Jungle', callback_data: 'pick_Jungle' }
         ]
       ]
     }
   });
 }
 
-async function handlePickRole(userId, data, bot, updatePoints, settings) {
-  const role = data.split('_')[2]; // xp, roam, ...
-  const heroList = heroes[role] || [];
-  if (heroList.length === 0) return;
+// هندل انتخاب رول
+async function handlePickByRole(bot, query, db, updatePoints, getUser) {
+  const userId = query.from.id;
+  const data = query.data;
 
-  const selected = heroList[Math.floor(Math.random() * heroList.length)];
-  await bot.sendMessage(userId, `🎯 پیشنهاد پیک برای رول ${role.toUpperCase()}:\n👉 ${selected}`);
+  const role = data.replace('pick_', '');
+  if (!roles.includes(role)) return;
+
+  const user = await getUser(userId);
+  const settingsSnap = await get(pickSettingsRef(db));
+  const settings = settingsSnap.exists() ? settingsSnap.val() : { cost: 0 };
+  const cost = settings.cost || 0;
+
+  if (user.points < cost) {
+    return bot.answerCallbackQuery(query.id, {
+      text: `❌ برای استفاده از این ویژگی حداقل ${cost} سکه لازم است.`,
+      show_alert: true
+    });
+  }
+
+  const filtered = heros.filter(h => h.role === role);
+  const randomHero = filtered[Math.floor(Math.random() * filtered.length)];
+
+  if (cost > 0) await updatePoints(userId, -cost);
+  await bot.answerCallbackQuery(query.id);
+  await bot.sendMessage(userId, `✅ هیروی پیشنهادی برای رول ${role}: *${randomHero.name}*`, { parse_mode: 'Markdown' });
 }
 
-module.exports = { handlePick, pickSettings, handlePickRole };
+module.exports = {
+  handlePickHero,
+  handlePickByRole
+};
