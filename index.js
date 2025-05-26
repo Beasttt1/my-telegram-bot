@@ -355,6 +355,33 @@ if (data === 'activate_bot' && userId === adminId) {
   return;
 }
 
+// شروع چالش
+if (query.data === 'challenge') {
+  await startChallenge({
+    userId: query.from.id,
+    bot,
+    db,
+    challengeUserRef: (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`),
+    adminId
+  });
+  return;
+}
+
+// جواب دادن به سوالات چالش
+  if (query.data.startsWith('challenge_answer_')) {
+    await handleAnswer({
+      query,
+      bot,
+      updatePoints,
+      challengeUserRef: (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`),
+      db,
+      adminId
+    });
+    return;
+  }
+  // ...
+
+
   // ---- Anti-Spam ----
   if (userId !== adminId) {
     if (isMuted(userId)) {
@@ -382,32 +409,6 @@ if (data === 'hero_counter') {
   await bot.answerCallbackQuery(query.id, { text: 'این بخش به زودی فعال می‌شود. لطفا منتظر بمانید.', show_alert: true });
   return;
 }
-
-// شروع چالش
-if (query.data === 'challenge') {
-  await startChallenge({
-    userId: query.from.id,
-    bot,
-    db,
-    challengeUserRef: (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`),
-    adminId
-  });
-  return;
-}
-
-// جواب دادن به سوالات چالش
-  if (query.data.startsWith('challenge_answer_')) {
-    await handleAnswer({
-      query,
-      bot,
-      updatePoints,
-      challengeUserRef: (userId, weekStr) => ref(db, `challenge_users/${userId}/${weekStr}`),
-      db,
-      adminId
-    });
-    return;
-  }
-  // ...
 
   // ---- Main menu back ----
   if (data === 'main_menu') {
