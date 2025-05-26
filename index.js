@@ -6,8 +6,8 @@ const { getDatabase, ref, set, get, update, remove, push } = require('firebase/d
 
 const app = express();
 const { startChallenge, handleAnswer } = require('./challenge');
-const { handlePickCommand, handlePickRole, handlePickAccessConfirmation } = require('./pick');
 const { fetchLatestNews } = require('./news');
+const { handlePickCommand, handlePickRole, handlePickAccessConfirmation } = require('./pick');
 // فرض بر این است که bot, db, updatePoints, adminId قبلاً تعریف شده دکمه‌ها (callback_query):
 const token = process.env.BOT_TOKEN;
 const adminId = Number(process.env.ADMIN_ID);
@@ -223,7 +223,7 @@ function mainMenuKeyboard() {
       { text: '👥 مشاهده اسکوادها', callback_data: 'view_squads' }
     ],
     [
-          { text: '📰 اخبار بازی', callback_data: 'ml_news' }
+              { text: '📰 اخبار بازی', callback_data: 'ml_news' }
     ],
     [
       { text: '💬پشتیبانی', callback_data: 'support' }
@@ -406,20 +406,6 @@ if (banSnap.exists() && banSnap.val().until > now) {
   return;
 }
 
-if (data === 'ml_news') {
-  const newsItems = await fetchLatestNews();
-  if (!newsItems) {
-    await bot.sendMessage(userId, "❌ خطا در دریافت اخبار. لطفاً بعداً امتحان کنید.");
-    return;
-  }
-
-  const messages = newsItems.map(item => `• <b>${item.title}</b>\n<a href="${item.link}">[مشاهده خبر]</a>`);
-  const finalMessage = `📰 آخرین اخبار Mobile Legends:\n\n${messages.join("\n\n")}`;
-
-  await bot.sendMessage(userId, finalMessage, { parse_mode: "HTML" });
-  return;
-}
-
 // دکمه رندوم پیک
 if (data === 'pick_hero') {
   await handlePickCommand(userId, bot, db);
@@ -563,6 +549,11 @@ if (data.startsWith('toggle_btn_') && userId === adminId) {
       return;
     }
   }
+  
+  if (data === 'ml_news') {
+  await sendMLNews(bot, userId);
+  return;
+}
   
   if (data === 'tournament') {
   await bot.answerCallbackQuery(query.id);
