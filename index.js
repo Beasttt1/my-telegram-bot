@@ -345,11 +345,10 @@ bot.on('callback_query', async (query) => {
   const userId = query.from.id;
   const data = query.data;
   const messageId = query.message && query.message.message_id;
+  const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
+  const pickSettings = pickSettingsSnap.exists() ? !!pickSettingsSnap.val() : false;
   const currentText = query.message.text;
   const currentMarkup = query.message.reply_markup || null;
-  
-  const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
-const pickSettings = pickSettingsSnap.exists() ? !!pickSettingsSnap.val() : false;
 
   // فرض بر این که می‌خواهی منوی اصلی را نمایش بدهی
   
@@ -366,18 +365,19 @@ if (data === 'activate_bot' && userId === adminId) {
 
 // کلیک روی دکمه «رندوم پیک»
 
-// دکمه رندوم پیک
-if (data === 'pick_hero') {
-  await handlePickCommand(userId, bot);
-  return;
-}
+  // دکمه رندوم پیک
+  if (data === 'pick_hero') {
+    await handlePickCommand(userId, bot);
+    return;
+  }
 
-// هندل انتخاب رول
-if (data.startsWith('pick_role_')) {
-  await handlePickRole(userId, data, bot, updatePoints, pickSettings);
-  return;
-}
+  // هندل انتخاب رول
+  if (data.startsWith('pick_role_')) {
+    await handlePickRole(userId, data, bot, updatePoints, pickSettings);
+    return;
+  }
 
+  // سایر هندل‌ها...
 
 
 if (data === 'pick_settings' && userId === adminId) {
