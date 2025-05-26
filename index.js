@@ -391,7 +391,17 @@ if (data === 'activate_bot' && userId === adminId) {
   return;
 }
 
-// دکمه رندوم پیک
+// بررسی بن عمومی قبل از هر کلیک
+const banSnap = await get(ref(db, `global_ban/${userId}`));
+const now = Date.now();
+if (banSnap.exists() && banSnap.val().until > now) {
+  await bot.answerCallbackQuery(query.id, {
+    text: '⛔ شما به دلیل اسپم، تا ۱۰ دقیقه نمی‌توانید از ربات استفاده کنید.',
+    show_alert: true
+  });
+  return;
+}
+
 // دکمه رندوم پیک
 if (data === 'pick_hero') {
   await handlePickCommand(userId, bot, db);
