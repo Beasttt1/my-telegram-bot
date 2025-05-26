@@ -1,28 +1,29 @@
-const fs = require('fs');
-const { get, set, update, ref } = require('firebase/database');
-const heroes = JSON.parse(fs.readFileSync('./heroes.json', 'utf8'));
+const fs = require("fs");
+const { ref, get, set } = require("firebase/database");
 
-const getRoleFa = (role) => {
+const heroes = JSON.parse(fs.readFileSync("./heroes.json", "utf8"));
+
+function getRoleFa(role) {
   switch (role) {
-    case 'XP': return 'XP Lane';
-    case 'Gold': return 'Gold Lane';
-    case 'Mid': return 'Mid Lane';
-    case 'Roamer': return 'Roam';
-    case 'Jungle': return 'Jungle';
+    case "XP": return "XP Lane";
+    case "Gold": return "Gold Lane";
+    case "Mid": return "Mid Lane";
+    case "Jungle": return "جنگل";
+    case "Roamer": return "Roam";
     default: return role;
   }
-};
+}
 
 async function handlePickCommand(userId, bot) {
   const roles = [
     [
-      { text: 'XP Lane', callback_data: 'pick_XP' },
-      { text: 'Gold Lane', callback_data: 'pick_Gold' }
+      { text: "XP Lane", callback_data: "pick_XP" },
+      { text: "Gold Lane", callback_data: "pick_Gold" }
     ],
     [
-      { text: 'Mid Lane', callback_data: 'pick_Mid' },
-      { text: 'Roamer', callback_data: 'pick_Roamer' },
-      { text: 'Jungle', callback_data: 'pick_Jungle' }
+      { text: "Mid Lane", callback_data: "pick_Mid" },
+      { text: "Roamer", callback_data: "pick_Roamer" },
+      { text: "Jungle", callback_data: "pick_Jungle" }
     ]
   ];
 
@@ -31,18 +32,24 @@ async function handlePickCommand(userId, bot) {
   });
 }
 
-async function handlePickRole(userId, data, bot, updatePoints, db, getUser) {
+async function handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db) {
+  // بستن پنجره قبلی
+  await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id
+  });
+
   const role = data.replace("pick_", "");
   const filtered = heroes.filter((h) => h.role.toLowerCase() === role.toLowerCase());
   if (!filtered.length) {
     await bot.sendMessage(userId, "هیرویی برای این رول پیدا نشد!");
     return;
   }
+
   const hero = filtered[Math.floor(Math.random() * filtered.length)];
 
-  const deductRef = ref(db, 'settings/pick_deduct');
-  const deductSnap = await get(deductRef);
-  const deductMode = deductSnap.exists() ? deductSnap.val() : false;
+  const deductModeSnap = await get(ref(db, 'settings/pick_deduct'));
+  const deductMode = deductModeSnap.exists() ? deductModeSnap.val() : false;
 
   let shouldDeduct = false;
 
@@ -50,20 +57,22 @@ async function handlePickRole(userId, data, bot, updatePoints, db, getUser) {
     shouldDeduct = true;
   } else if (deductMode === 'once') {
     const accessRef = ref(db, `pick_access/${userId}`);
-    const accessSnap = await get(accessRef);
-    const alreadyPaid = accessSnap.exists();
+    const userAccessSnap = await get(accessRef);
+    const alreadyPaid = userAccessSnap.exists();
 
     if (!alreadyPaid) {
-      const confirmMsg = await bot.sendMessage(userId, "آیا مطمئن هستید که می‌خواهید با پرداخت ۳ امتیاز، دسترسی دائمی به این بخش داشته باشید؟", {
-        reply_markup: {
-          inline_keyboard: [
-            [{ text: 'بله، پرداخت ۳ امتیاز', callback_data: 'pick_pay_confirm' }],
-            [{ text: 'لغو', callback_data: 'cancel' }]
-          ]
-        }
-      });
-      // ثبت وضعیت برای ادامه در فایل اصلی (باید هندل شود)
-      return;
+      const userSnap = await get(ref(db, `users/${userId}`));
+      const user = userSnap.exists() ? userSnap.val() : null;
+      const points = user?.points || 0;
+
+      if (points >= 3) {
+        await updatePoints(userId, -3);
+        await set(accessRef, { paid: true });
+        await bot.sendMessage(userId, '✅ شما با پرداخت ۳ امتیاز، دسترسی دائمی به این بخش پیدا کردید.');
+      } else {
+        await bot.sendMessage(userId, '❌ برای فعال‌سازی دائمی این بخش، حداقل ۳ امتیاز نیاز دارید.');
+        return;
+      }
     }
   }
 
