@@ -369,7 +369,8 @@ if (data === 'pick_hero') {
 }
 
 // انتخاب رول و دادن هیرو
-if (data.startsWith('pick_')) {
+const validRoles = ['pick_XP', 'pick_Gold', 'pick_Mid', 'pick_Roamer', 'pick_Jungle'];
+if (validRoles.includes(data)) {
   const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
   const pickSettings = pickSettingsSnap.exists() ? !!pickSettingsSnap.val() : false;
 
