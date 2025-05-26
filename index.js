@@ -6,7 +6,7 @@ const { getDatabase, ref, set, get, update, remove, push } = require('firebase/d
 
 const app = express();
 const { startChallenge, handleAnswer } = require('./challenge');
-const sendNews = require('./news').sendNews; // این هم درسته
+const { sendNews } = require('./news');
 const { handlePickCommand, handlePickRole, handlePickAccessConfirmation } = require('./pick');
 // فرض بر این است که bot, db, updatePoints, adminId قبلاً تعریف شده دکمه‌ها (callback_query):
 const token = process.env.BOT_TOKEN;
@@ -140,6 +140,33 @@ async function listGiftCodesCombined() {
       }))
     : [];
   return codes.concat(gCodes);
+}
+
+const CLICK_INTERVAL = 5 * 60 * 1000; // ۵ دقیقه
+
+async function handleNewsClick(bot, userId) {
+  const docRef = db.collection('news_clicks').doc(userId.toString());
+  const doc = await docRef.get();
+
+  const now = Date.now();
+
+  if (doc.exists) {
+    const lastClick = doc.data().lastClick;
+    if (now - lastClick < CLICK_INTERVAL) {
+      const remaining = CLICK_INTERVAL - (now - lastClick);
+      const minutes = Math.floor(remaining / (60 * 1000));
+      const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
+
+      await bot.sendMessage(userId, `❌ لطفاً ${minutes} دقیقه و ${seconds} ثانیه دیگر صبر کنید تا بتوانید دوباره اخبار را ببینید.`);
+      return;
+    }
+  }
+
+  // ارسال اخبار
+  await sendNews(bot, userId);
+
+  // ذخیره زمان کلیک جدید
+  await docRef.set({ lastClick: now });
 }
 
 // ---- Squad Request Helpers ----
@@ -550,8 +577,8 @@ if (data.startsWith('toggle_btn_') && userId === adminId) {
     }
   }
   
-  if (data === 'ml_news') {
-  await sendNews(bot, userId);
+if (data === 'ml_news') {
+  await handleNewsClick(bot, userId);
   return;
 }
   
