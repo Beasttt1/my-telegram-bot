@@ -17,7 +17,14 @@ async function handlePickCommand(userId, bot) {
   });
 }
 
-async function handlePickRole(userId, data, bot, updatePoints, pickSettings) {
+async function handlePickRole(userId, data, bot, updatePoints, pickSettings, query) {
+  await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id
+  });
+  // ادامه کد اینجاست
+
+  // ادامه کد...
   const role = data.replace("pick_role_", "");
   const filtered = heroes.filter((h) => h.role === role);
   if (!filtered.length) {
