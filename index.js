@@ -551,7 +551,7 @@ if (data.startsWith('toggle_btn_') && userId === adminId) {
   }
   
   if (data === 'ml_news') {
-  await sendMLNews(bot, userId);
+  await sendNews(bot, userId);
   return;
 }
   
