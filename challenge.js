@@ -107,8 +107,9 @@ async function handleAnswer({ query, bot, updatePoints, challengeUserRef, db, ad
   const userId = query.from.id;
   const state = challengeState[userId];
   if (!state || state.finished) return;
-  const [_, qIdxStr, ansIdxStr] = query.data.split('_');
-  const qIdx = parseInt(qIdxStr), ansIdx = parseInt(ansIdxStr);
+const parts = query.data.split('_');
+const qIdx = parseInt(parts[2]);
+const ansIdx = parseInt(parts[3]);
   if (!state.waitingFor || state.waitingFor.qIdx !== qIdx) return;
   if (state.waitingFor.expired) {
     await bot.answerCallbackQuery(query.id, { text: '⏱ وقت پاسخ به این سوال تموم شده.', show_alert: true });
@@ -163,8 +164,4 @@ async function nextChallengeOrFinish(userId, bot, state, challengeUserRef, db, a
   }
 }
 
-module.exports = {
-  startChallenge,
-  handleAnswer,
-  challengeState
-};
+module.exports = { startChallenge, handleAnswer, challengeState };
