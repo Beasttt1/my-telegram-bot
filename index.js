@@ -373,10 +373,12 @@ if (data.startsWith('pick_')) {
   const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
   const pickSettings = pickSettingsSnap.exists() ? pickSettingsSnap.val() : false;
 
+
+
   // فقط اگر این دکمه مربوط به پنل مدیریت نبود، بریم سمت هندل
   const isManagementAction = data === 'pick_settings' || data.startsWith('pick_set_');
   if (!isManagementAction) {
-  await handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db);
+  await handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db); // db را اینجا اضافه کن
   return;
 }
 
