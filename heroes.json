@@ -1,0 +1,17 @@
+[
+  { "name": "Balmond", "role": "XP" },
+  { "name": "Thamuz", "role": "XP" },
+  { "name": "Paquito", "role": "XP" },
+  { "name": "Beatrix", "role": "Gold" },
+  { "name": "Claude", "role": "Gold" },
+  { "name": "Bruno", "role": "Gold" },
+  { "name": "Kagura", "role": "Mid" },
+  { "name": "Yve", "role": "Mid" },
+  { "name": "Lylia", "role": "Mid" },
+  { "name": "Karina", "role": "Jungle" },
+  { "name": "Ling", "role": "Jungle" },
+  { "name": "Lancelot", "role": "Jungle" },
+  { "name": "Lolita", "role": "Roamer" },
+  { "name": "Atlas", "role": "Roamer" },
+  { "name": "Angela", "role": "Roamer" }
+]
