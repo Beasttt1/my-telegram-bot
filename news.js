@@ -23,4 +23,4 @@ async function sendMLNews(bot, userId) {
   }
 }
 
-module.exports = { sendMLNews };
+module.exports = { sendNews };
