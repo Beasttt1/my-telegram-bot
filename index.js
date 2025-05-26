@@ -347,6 +347,9 @@ bot.on('callback_query', async (query) => {
   const messageId = query.message && query.message.message_id;
   const currentText = query.message.text;
   const currentMarkup = query.message.reply_markup || null;
+  
+  const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
+const pickSettings = pickSettingsSnap.exists() ? !!pickSettingsSnap.val() : false;
 
   // فرض بر این که می‌خواهی منوی اصلی را نمایش بدهی
   
@@ -363,13 +366,19 @@ if (data === 'activate_bot' && userId === adminId) {
 
 // کلیک روی دکمه «رندوم پیک»
 
-if (query.data === 'pick_hero') {
-  return handlePickHero(bot, query, db);
+// دکمه رندوم پیک
+if (data === 'pick_hero') {
+  await handlePickCommand(userId, bot);
+  return;
 }
 
-if (query.data.startsWith('pick_')) {
-  return handlePickByRole(bot, query, db, updatePoints, getUser);
+// هندل انتخاب رول
+if (data.startsWith('pick_role_')) {
+  await handlePickRole(userId, data, bot, updatePoints, pickSettings);
+  return;
 }
+
+
 
 if (data === 'pick_settings' && userId === adminId) {
   await bot.sendMessage(userId, `آیا زدن روی دکمه رندوم پیک باید امتیاز کم کند؟`, {
