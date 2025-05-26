@@ -384,29 +384,14 @@ if (data.startsWith('pick_')) {
 
 
 // مدیریت رندوم پیک توسط ادمین
-if (data === 'pick_settings' && userId === adminId) {
-  await bot.sendMessage(userId, 'آیا زدن روی دکمه رندوم پیک باید امتیاز کم کند؟', {
-    reply_markup: {
-      inline_keyboard: [
-        [{ text: 'بله، کم کند', callback_data: 'pick_set_deduct_yes' }],
-        [{ text: 'نه، رایگان باشد', callback_data: 'pick_set_deduct_no' }],
-        [{ text: 'بازگشت', callback_data: 'panel_back' }]
-      ]
-    }
-  });
-  await bot.answerCallbackQuery(query.id);
-  return;
-}
-if (data === 'pick_set_deduct_yes' && userId === adminId) {
-  await pickSettings.setDeduct(true);
-  await bot.sendMessage(userId, '✅ تنظیم شد: زدن روی دکمه رندوم پیک امتیاز کم می‌کند.');
-  return;
-}
-if (data === 'pick_set_deduct_no' && userId === adminId) {
-  await pickSettings.setDeduct(false);
-  await bot.sendMessage(userId, '✅ تنظیم شد: زدن روی دکمه رندوم پیک رایگان است.');
-  return;
-}
+if (data === 'pick_settings' && userId === adminId) { await bot.sendMessage(userId, 'تنظیمات مربوط به دکمه رندوم پیک:', { reply_markup: { inline_keyboard: [ [{ text: 'بله، با هر کلیک امتیاز کم کند', callback_data: 'pick_set_deduct_yes' }], [{ text: 'نه، رایگان باشد', callback_data: 'pick_set_deduct_no' }], [{ text: 'فعال‌سازی با پرداخت ۳ امتیاز (برای همیشه)', callback_data: 'pick_set_deduct_once' }], [{ text: 'بازگشت', callback_data: 'panel_back' }] ] } }); await bot.answerCallbackQuery(query.id); return; }
+
+if (data === 'pick_set_deduct_yes' && userId === adminId) { await set(ref(db, 'settings/pick_deduct'), true); await bot.sendMessage(userId, '✅ تنظیم شد: با هر کلیک امتیاز کم می‌شود.'); return; }
+
+if (data === 'pick_set_deduct_no' && userId === adminId) { await set(ref(db, 'settings/pick_deduct'), false); await bot.sendMessage(userId, '✅ تنظیم شد: این بخش رایگان است.'); return; }
+
+if (data === 'pick_set_deduct_once' && userId === adminId) { await set(ref(db, 'settings/pick_deduct'), 'once'); await bot.sendMessage(userId, '✅ تنظیم شد: کاربران فقط یک بار با پرداخت ۳ امتیاز برای همیشه فعال می‌کنند.'); return; }
+
 
 // شروع چالش
 if (query.data === 'challenge') {
@@ -433,6 +418,38 @@ if (query.data === 'challenge') {
     return;
   }
   // ...
+  
+  // تأیید پرداخت ۳ امتیاز برای فعال‌سازی دائمی رندوم پیک
+if (data === 'pick_pay_confirm') {
+  const user = await getUser(userId);
+  const points = user?.points || 0;
+
+  if (points >= 3) {
+    await updatePoints(userId, -3);
+    await set(ref(db, `pick_access/${userId}`), { paid: true });
+    await bot.sendMessage(userId, '✅ شما با پرداخت ۳ امتیاز، دسترسی دائمی به این بخش پیدا کردید.');
+  } else {
+    await bot.sendMessage(userId, '❌ برای فعال‌سازی دائمی این بخش، حداقل ۳ امتیاز نیاز دارید.');
+  }
+
+  // بستن پنجره
+  await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id
+  });
+
+  return;
+}
+
+// لغو فعال‌سازی دائمی
+if (data === 'cancel') {
+  await bot.sendMessage(userId, '❌ عملیات لغو شد.');
+  await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id
+  });
+  return;
+}
 
 
   // ---- Anti-Spam ----
