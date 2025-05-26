@@ -399,6 +399,19 @@ if (data === 'pick_set_deduct_no' && userId === adminId) {
   return;
 }
 
+if (data.startsWith('pick_role_')) {
+  // حذف اینلاین کیبورد (بستن پنجره شیشه‌ای)
+  if (query.message) {
+    await bot.editMessageReplyMarkup(
+      { inline_keyboard: [] },
+      { chat_id: query.message.chat.id, message_id: query.message.message_id }
+    );
+  }
+  await bot.answerCallbackQuery(query.id);
+  await handlePickRole(userId, data, bot, updatePoints, pickSettings);
+  return;
+}
+
 // شروع چالش
 if (query.data === 'challenge') {
   await startChallenge({
