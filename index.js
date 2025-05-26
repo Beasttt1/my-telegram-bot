@@ -579,12 +579,6 @@ if (data.startsWith('toggle_btn_') && userId === adminId) {
       return;
     }
   }
-
-  await set(cooldownRef, now); // ثبت زمان جدید
-  await sendNews(bot, userId); // نمایش خبرها
-  return;
-}
-
   
   if (data === 'tournament') {
   await bot.answerCallbackQuery(query.id);
