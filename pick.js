@@ -1,8 +1,7 @@
-const { get } = require('firebase/database');
 const fs = require('fs');
 
 // بارگذاری لیست هیروها
-const heros = JSON.parse(fs.readFileSync('./heros.json', 'utf8'));
+const heros = JSON.parse(fs.readFileSync('./heroes.json', 'utf8'));
 
 // رول به‌فارسی برای نمایش زیباتر
 const roleNames = {
