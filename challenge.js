@@ -20,15 +20,19 @@ const challengeState = {}; // userId -> state
 // شروع چالش برای کاربر
 async function startChallenge({ userId, bot, db, challengeUserRef, adminId }) {
   const weekStr = getCurrentWeekString();
-  if (typeof challengeUserRef !== "function") {
-    await bot.sendMessage(userId, "خطای داخلی: challengeUserRef تابع نیست.");
-    return;
-  }
-  const prev = await get(challengeUserRef(userId, weekStr));
-  if (prev.exists() && userId !== adminId) {
-    await bot.sendMessage(userId, "❌ شما این هفته چالش را انجام داده‌اید! هفته بعد دوباره امتحان کنید.");
-    return;
-  }
+if (typeof challengeUserRef !== "function") {
+  await bot.sendMessage(userId, "خطای داخلی: challengeUserRef تابع نیست.");
+  return;
+}
+const prev = await get(challengeUserRef(userId, weekStr));
+if (prev.exists() && userId !== adminId) {
+  await bot.sendMessage(userId, "❌ شما این هفته چالش را انجام داده‌اید! هفته بعد دوباره امتحان کنید.");
+  return;
+}
+// همینجا یک رکورد اولیه ذخیره کن تا فوراً قفل بشه
+if (userId !== adminId) {
+  await set(challengeUserRef(userId, weekStr), { started: true });
+}
   const questions = loadQuestions();
   const selected = questions.sort(() => Math.random() - 0.5).slice(0, 3);
   challengeState[userId] = {
