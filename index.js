@@ -362,8 +362,23 @@ if (data === 'activate_bot' && userId === adminId) {
 }
 
 // کلیک روی دکمه «رندوم پیک»
-if (data === 'random_pick') {
-  await handlePick(userId, bot, pickSettings, updatePoints);
+
+if (query.data === 'pick_hero') {
+  await bot.sendMessage(userId, 'کدام رول را می‌خواهید؟', {
+    reply_markup: {
+      inline_keyboard: [
+        [
+          { text: 'XP Lane', callback_data: 'pick_XP' },
+          { text: 'Gold Lane', callback_data: 'pick_Gold' }
+        ],
+        [
+          { text: 'Mid Lane', callback_data: 'pick_Mid' },
+          { text: 'Roamer', callback_data: 'pick_Roamer' },
+          { text: 'Jungle', callback_data: 'pick_Jungle' }
+        ]
+      ]
+    }
+  });
   return;
 }
 
