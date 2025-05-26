@@ -93,6 +93,7 @@ async function getAllUsersFromDatabase() {
   });
 }
 
+
 // ---- Gift Code helpers ----
 const giftCodeRef = code => ref(db, `gift_codes/${code}`);
 const globalGiftCodeRef = code => ref(db, `global_gift_codes/${code}`);
@@ -554,6 +555,30 @@ if (data === 'ml_news') {
   await sendNews(bot, userId);
   return;
 }
+
+if (data === 'ml_news') {
+  const cooldownRef = ref(db, `cooldowns/news/${userId}`);
+  const cooldownSnap = await get(cooldownRef);
+  const now = Date.now();
+
+  if (cooldownSnap.exists()) {
+    const lastUsed = cooldownSnap.val();
+    const secondsPassed = Math.floor((now - lastUsed) / 1000);
+
+    if (secondsPassed < 300) { // 300 ثانیه = 5 دقیقه
+      await bot.answerCallbackQuery(query.id, {
+        text: `⏱ لطفاً ${300 - secondsPassed} ثانیه دیگر صبر کنید.`,
+        show_alert: true
+      });
+      return;
+    }
+  }
+
+  await set(cooldownRef, now); // ثبت زمان جدید
+  await sendNews(bot, userId); // نمایش خبرها
+  return;
+}
+
   
   if (data === 'tournament') {
   await bot.answerCallbackQuery(query.id);
