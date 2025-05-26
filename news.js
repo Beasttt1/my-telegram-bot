@@ -3,15 +3,15 @@ const parser = new Parser();
 
 async function sendNews(bot, userId) {
   try {
-    const feed = await parser.parseURL('https://feeds.bbci.co.uk/news/rss.xml');
-    const news = feed.items.slice(0, 5); // فقط ۵ خبر اول
+    const feed = await parser.parseURL('https://www.reddit.com/r/MobileLegendsGame/.rss');
+    const news = feed.items.slice(0, 5);
 
     if (news.length === 0) {
       await bot.sendMessage(userId, '❌ خبری برای نمایش وجود ندارد.');
       return;
     }
 
-    let message = '📰 آخرین اخبار:\n\n';
+    let message = '📰 آخرین اخبار Mobile Legends:\n\n';
     news.forEach((item, index) => {
       message += `🔹 ${item.title}\n${item.link}\n\n`;
     });
@@ -22,5 +22,3 @@ async function sendNews(bot, userId) {
     await bot.sendMessage(userId, '❌ خطا در دریافت اخبار. لطفاً بعداً امتحان کنید.');
   }
 }
-
-module.exports = { sendNews };
