@@ -40,7 +40,7 @@ async function handlePickCommand(userId, bot, db) {
     [{ text: "Mid Lane", callback_data: "pick_mid" }, { text: "Roam", callback_data: "pick_roam" }, { text: "Jungle", callback_data: "pick_jungle" }]
   ];
 
-  await bot.sendMessage(userId, "رول مورد نظر را انتخاب کنید:", {
+  await bot.sendMessage(userId, "🎰رول مورد نظر را انتخاب کنید:", {
     reply_markup: { inline_keyboard: roles }
   });
 }
