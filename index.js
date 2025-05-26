@@ -370,12 +370,16 @@ if (data === 'pick_hero') {
 }
 
 // انتخاب رول و دادن هیرو
-if (data.startsWith('pick_') && !data.startsWith('pick_manage')) {
+if (data.startsWith('pick_')) {
   const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
   const pickSettings = pickSettingsSnap.exists() ? !!pickSettingsSnap.val() : false;
 
-  await handlePickRole(userId, data, bot, updatePoints, pickSettings, query);
-  return;
+  // فقط اگر این دکمه مربوط به پنل مدیریت نبود، بریم سمت هندل
+  const isManagementAction = data === 'pick_settings' || data.startsWith('pick_set_');
+  if (!isManagementAction) {
+    await handlePickRole(userId, data, bot, updatePoints, pickSettings, query);
+    return;
+  }
 }
 
 
