@@ -142,33 +142,23 @@ async function listGiftCodesCombined() {
   return codes.concat(gCodes);
 }
 
-const CLICK_INTERVAL = 5 * 60 * 1000; // ۵ دقیقه
+const CLICK_INTERVAL = 5 * 60 * 1000; // 5 دقیقه
 
 async function handleNewsClick(bot, userId) {
-  const docRef = db.collection('news_clicks').doc(userId.toString());
-  const doc = await docRef.get();
-
+  const ref = db.ref(`news_clicks/${userId}`);
+  const snapshot = await ref.once('value');
+  const lastClick = snapshot.exists() ? snapshot.val().timestamp : null;
   const now = Date.now();
 
-  if (doc.exists) {
-    const lastClick = doc.data().lastClick;
-    if (now - lastClick < CLICK_INTERVAL) {
-      const remaining = CLICK_INTERVAL - (now - lastClick);
-      const minutes = Math.floor(remaining / (60 * 1000));
-      const seconds = Math.floor((remaining % (60 * 1000)) / 1000);
-
-      await bot.sendMessage(userId, `❌ لطفاً ${minutes} دقیقه و ${seconds} ثانیه دیگر صبر کنید تا بتوانید دوباره اخبار را ببینید.`);
-      return;
-    }
+  if (lastClick && now - lastClick < CLICK_INTERVAL) {
+    const remaining = Math.ceil((CLICK_INTERVAL - (now - lastClick)) / 1000);
+    await bot.sendMessage(userId, `⌛ لطفاً ${remaining} ثانیه دیگر برای دریافت اخبار صبر کنید.`);
+    return;
   }
 
-  // ارسال اخبار
+  await ref.set({ timestamp: now });
   await sendNews(bot, userId);
-
-  // ذخیره زمان کلیک جدید
-  await docRef.set({ lastClick: now });
 }
-
 // ---- Squad Request Helpers ----
 const squadReqRef = id => ref(db, `squad_requests/${id}`);
 const squadReqsRef = ref(db, 'squad_requests');
