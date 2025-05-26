@@ -3,25 +3,11 @@ const { get, set, ref } = require("firebase/database");
 
 const heroes = JSON.parse(fs.readFileSync("./heroes.json", "utf8"));
 
-// رول‌ها برای فارسی کردن
-function getRoleFa(role) {
-  switch (role) {
-    case "xp": return "XP Lane";
-    case "gold": return "Gold Lane";
-    case "mid": return "Mid Lane";
-    case "jungle": return "Jungle";
-    case "roam": return "Roamer";
-    default: return role;
-  }
-}
-
-// نمایش منوی رول‌ها
 async function handlePickCommand(userId, bot, db) {
   const accessSnap = await get(ref(db, `pick_access/${userId}`));
   const deductModeSnap = await get(ref(db, "settings/pick_deduct"));
   const deductMode = deductModeSnap.exists() ? deductModeSnap.val() : false;
 
-  // اگر حالت once بود و کاربر نخریده بود
   if (deductMode === "once" && !accessSnap.exists()) {
     await bot.sendMessage(userId, "آیا مطمئن هستید که می‌خواهید با پرداخت ۳ امتیاز این بخش را برای همیشه فعال کنید؟", {
       reply_markup: {
@@ -34,17 +20,12 @@ async function handlePickCommand(userId, bot, db) {
     return;
   }
 
-  // نمایش رول‌ها
   const roles = [
-    [
-      { text: "XP Lane", callback_data: "pick_xp" },
-      { text: "Gold Lane", callback_data: "pick_gold" }
-    ],
-    [
-      { text: "Mid Lane", callback_data: "pick_mid" },
-      { text: "Roamer", callback_data: "pick_roam" },
-      { text: "Jungle", callback_data: "pick_jungle" }
-    ]
+    [{ text: "XP Lane", callback_data: "pick_xp" }],
+    [{ text: "Gold Lane", callback_data: "pick_gold" }],
+    [{ text: "Mid Lane", callback_data: "pick_mid" }],
+    [{ text: "Roamer", callback_data: "pick_roam" }],
+    [{ text: "Jungle", callback_data: "pick_jungle" }]
   ];
 
   await bot.sendMessage(userId, "رول مورد نظر را انتخاب کنید:", {
@@ -52,12 +33,10 @@ async function handlePickCommand(userId, bot, db) {
   });
 }
 
-// هندل کلیک روی رول
 async function handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db, getUser) {
   const role = data.replace("pick_", "").toLowerCase();
   const filtered = heroes.filter((h) => h.role.toLowerCase() === role);
 
-  // بستن پنجره رول
   await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
     chat_id: query.message.chat.id,
     message_id: query.message.message_id
@@ -71,7 +50,6 @@ async function handlePickRole(userId, data, bot, updatePoints, pickSettings, que
   const hero = filtered[Math.floor(Math.random() * filtered.length)];
   let shouldDeduct = false;
 
-  // بررسی مود از تنظیمات
   if (pickSettings === true) {
     shouldDeduct = true;
   } else if (pickSettings === "once") {
@@ -93,7 +71,6 @@ async function handlePickRole(userId, data, bot, updatePoints, pickSettings, que
     }
   }
 
-  // کم کردن امتیاز در صورت نیاز
   if (shouldDeduct) {
     await updatePoints(userId, -1);
     await bot.sendMessage(
@@ -108,7 +85,6 @@ async function handlePickRole(userId, data, bot, updatePoints, pickSettings, que
   }
 }
 
-// فعال‌سازی دائمی با ۳ امتیاز
 async function handlePickAccessConfirmation(userId, bot, db, getUser, updatePoints, query) {
   const user = await getUser(userId);
   const points = user?.points || 0;
@@ -121,7 +97,6 @@ async function handlePickAccessConfirmation(userId, bot, db, getUser, updatePoin
     await bot.sendMessage(userId, "❌ برای فعال‌سازی دائمی این بخش، حداقل ۳ امتیاز نیاز دارید.");
   }
 
-  // بستن پنجره
   await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
     chat_id: query.message.chat.id,
     message_id: query.message.message_id
