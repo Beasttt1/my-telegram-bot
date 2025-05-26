@@ -382,7 +382,6 @@ bot.on('callback_query', async (query) => {
   const messageId = query.message && query.message.message_id;
   userState[userId] = null;
   sendMainMenu(userId, msg.from); // اینجا msg.from را اضافه کن
-});
   const blockedBtn = MENU_BUTTONS.find(btn => btn.key === data);
 if (blockedBtn && !(await isButtonEnabled(data)) && userId !== adminId) {
   return bot.answerCallbackQuery(query.id, { text: 'این بخش موقتا از دسترس خارج شده', show_alert: true });
