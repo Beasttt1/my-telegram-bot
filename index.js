@@ -142,23 +142,6 @@ async function listGiftCodesCombined() {
   return codes.concat(gCodes);
 }
 
-const CLICK_INTERVAL = 5 * 60 * 1000; // 5 دقیقه
-
-async function handleNewsClick(bot, userId) {
-  const ref = db.ref(`news_clicks/${userId}`);
-  const snapshot = await ref.once('value');
-  const lastClick = snapshot.exists() ? snapshot.val().timestamp : null;
-  const now = Date.now();
-
-  if (lastClick && now - lastClick < CLICK_INTERVAL) {
-    const remaining = Math.ceil((CLICK_INTERVAL - (now - lastClick)) / 1000);
-    await bot.sendMessage(userId, `⌛ لطفاً ${remaining} ثانیه دیگر برای دریافت اخبار صبر کنید.`);
-    return;
-  }
-
-  await ref.set({ timestamp: now });
-  await sendNews(bot, userId);
-}
 // ---- Squad Request Helpers ----
 const squadReqRef = id => ref(db, `squad_requests/${id}`);
 const squadReqsRef = ref(db, 'squad_requests');
@@ -568,7 +551,7 @@ if (data.startsWith('toggle_btn_') && userId === adminId) {
   }
   
 if (data === 'ml_news') {
-  await handleNewsClick(bot, userId);
+  await sendNews(bot, userId);
   return;
 }
   
