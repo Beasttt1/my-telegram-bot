@@ -346,6 +346,7 @@ bot.on('callback_query', async (query) => {
   const userId = query.from.id;
   const data = query.data;
   const messageId = query.message && query.message.message_id;
+  const validPickRoles = ['pick_XP', 'pick_Gold', 'pick_Mid', 'pick_Roamer', 'pick_Jungle'];
   const currentText = query.message.text;
   const currentMarkup = query.message.reply_markup || null;
 
@@ -369,8 +370,7 @@ if (data === 'pick_hero') {
 }
 
 // انتخاب رول و دادن هیرو
-const validRoles = ['pick_XP', 'pick_Gold', 'pick_Mid', 'pick_Roamer', 'pick_Jungle'];
-if (validRoles.includes(data)) {
+if (validPickRoles.includes(data)) {
   const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
   const pickSettings = pickSettingsSnap.exists() ? !!pickSettingsSnap.val() : false;
 
