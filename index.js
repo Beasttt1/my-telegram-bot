@@ -365,7 +365,7 @@ if (data === 'activate_bot' && userId === adminId) {
 
 // دکمه رندوم پیک
 if (data === 'pick_hero') {
-  await handlePickCommand(userId, bot);
+  await handlePickCommand(userId, bot, db);
   return;
 }
 
@@ -442,12 +442,13 @@ if (data === 'pick_pay_confirm') {
 }
 
 // لغو فعال‌سازی دائمی
-if (data === 'cancel') {
-  await bot.sendMessage(userId, '❌ عملیات لغو شد.');
-  await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
-  });
+if (data === 'pick_once_confirm') {
+  await handlePickAccessConfirmation(userId, bot, db, getUser, updatePoints);
+  return;
+}
+
+if (data === 'cancel_pick_access') {
+  await bot.sendMessage(userId, 'درخواست لغو شد.');
   return;
 }
 
