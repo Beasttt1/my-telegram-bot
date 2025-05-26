@@ -73,29 +73,34 @@ async function handlePickRole(userId, data, bot, updatePoints, pickSettings, que
   const now = Date.now();
   const filtered = heroes.filter((h) => h.role.toLowerCase() === role);
   
-  const banSnap = await get(ref(db, `banned_pick/${userId}`));
-  if (banSnap.exists() && banSnap.val().until > now) {
-    const waitMin = Math.ceil((banSnap.val().until - now) / 60000);
-    await bot.sendMessage(userId, `⛔ به دلیل کلیک‌های مکرر، شما تا ${waitMin} دقیقه نمی‌توانید از این بخش استفاده کنید.`);
-    return;
-  }
+  const globalBanSnap = await get(ref(db, `global_ban/${userId}`));
+if (globalBanSnap.exists() && globalBanSnap.val().until > now) {
+  await bot.answerCallbackQuery(query.id, {
+    text: '⛔ به دلیل کلیک‌های مکرر، شما تا ۱۰ دقیقه نمی‌توانید از ربات استفاده کنید.',
+    show_alert: true
+  });
+  return;
+}
 
   // بررسی ضد اسپم (۴ بار در ۸ ثانیه = بن ۱۰ دقیقه‌ای)
   const spamRef = ref(db, `antiSpam_pick/${userId}`);
-  const spamSnap = await get(spamRef);
-  let clicks = spamSnap.exists() ? spamSnap.val() : [];
+const spamSnap = await get(spamRef);
+let clicks = spamSnap.exists() ? spamSnap.val() : [];
 
-  clicks = clicks.filter(ts => now - ts < 8000); // فقط کلیک‌های ۸ ثانیه اخیر
-  clicks.push(now);
+clicks = clicks.filter(ts => now - ts < 8000); // فقط کلیک‌های ۸ ثانیه اخیر
+clicks.push(now);
 
-  if (clicks.length >= 4) {
-    await set(ref(db, `banned_pick/${userId}`), { until: now + 10 * 60 * 1000 }); // 10 دقیقه بن
-    await bot.sendMessage(userId, '🚫 شما بیش از حد سریع کلیک کردید! این بخش به مدت ۱۰ دقیقه برای شما غیرفعال شد.');
-    return;
-  } else {
-    await set(spamRef, clicks);
-  }
-
+if (clicks.length >= 4) {
+  // بن کردن کل ربات برای ۱۰ دقیقه
+  await set(ref(db, `global_ban/${userId}`), { until: now + 10 * 60 * 1000 });
+  await bot.answerCallbackQuery(query.id, {
+    text: '⛔ به دلیل کلیک‌های مکرر، شما تا ۱۰ دقیقه نمی‌توانید از ربات استفاده کنید.',
+    show_alert: true
+  });
+  return;
+} else {
+  await set(spamRef, clicks);
+}
   // ادامه‌ی کدت...
 
   // ۳. ادامه کد قبلی...
