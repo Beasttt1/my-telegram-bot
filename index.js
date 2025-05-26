@@ -244,11 +244,12 @@ function mainMenuKeyboard() {
   };
 }
 function sendMainMenu(userId, user = {}, messageId = null, currentText = null, currentMarkup = null) {
-  const name =
-    user.first_name ||
-    user.last_name ||
-    user.username ||
-    'کاربر عزیز';
+  let name = '';
+  if (user.first_name) name = user.first_name;
+  else if (user.last_name) name = user.last_name;
+  else if (user.username) name = '@' + user.username;
+  else name = 'کاربر عزیز';
+
   const text = `سلام ${name}، به ربات محاسبه‌گر Mobile Legends خوش آمدید ✨`;
   const { reply_markup } = mainMenuKeyboard();
 
@@ -381,6 +382,7 @@ bot.on('callback_query', async (query) => {
   const messageId = query.message && query.message.message_id;
   userState[userId] = null;
   sendMainMenu(userId, msg.from); // اینجا msg.from را اضافه کن
+});
   const blockedBtn = MENU_BUTTONS.find(btn => btn.key === data);
 if (blockedBtn && !(await isButtonEnabled(data)) && userId !== adminId) {
   return bot.answerCallbackQuery(query.id, { text: 'این بخش موقتا از دسترس خارج شده', show_alert: true });
