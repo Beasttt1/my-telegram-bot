@@ -70,6 +70,7 @@ async function handlePickAccessConfirmation(userId, bot, db, getUser, updatePoin
 // نمایش هیروی رندوم بعد از انتخاب رول
 async function handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db) {
   const role = data.replace("pick_", "").toLowerCase();
+  const now = Date.now();
   const filtered = heroes.filter((h) => h.role.toLowerCase() === role);
   
   const banSnap = await get(ref(db, `banned_pick/${userId}`));
@@ -79,7 +80,7 @@ async function handlePickRole(userId, data, bot, updatePoints, pickSettings, que
     return;
   }
 
-  // ۲. بررسی ضد اسپم (۴ بار در ۸ ثانیه = ۱۰ دقیقه بن)
+  // بررسی ضد اسپم (۴ بار در ۸ ثانیه = بن ۱۰ دقیقه‌ای)
   const spamRef = ref(db, `antiSpam_pick/${userId}`);
   const spamSnap = await get(spamRef);
   let clicks = spamSnap.exists() ? spamSnap.val() : [];
@@ -88,18 +89,19 @@ async function handlePickRole(userId, data, bot, updatePoints, pickSettings, que
   clicks.push(now);
 
   if (clicks.length >= 4) {
-    await set(ref(db, `banned_pick/${userId}`), { until: now + 10 * 60 * 1000 }); // ۱۰ دقیقه بن
+    await set(ref(db, `banned_pick/${userId}`), { until: now + 10 * 60 * 1000 }); // 10 دقیقه بن
     await bot.sendMessage(userId, '🚫 شما بیش از حد سریع کلیک کردید! این بخش به مدت ۱۰ دقیقه برای شما غیرفعال شد.');
     return;
   } else {
     await set(spamRef, clicks);
   }
 
+  // ادامه‌ی کدت...
+
   // ۳. ادامه کد قبلی...
 
 
 // محدودیت زمانی برای کلیک (هر ۶۰ ثانیه یک بار)
-const now = Date.now();
 const cooldownRef = ref(db, `cooldowns/pick/${userId}`);
 const cooldownSnap = await get(cooldownRef);
 
