@@ -392,42 +392,38 @@ if (data === 'activate_bot' && userId === adminId) {
 }
 
 // دکمه رندوم پیک
+// دکمه رندوم پیک
 if (data === 'pick_hero') {
   await handlePickCommand(userId, bot, db);
   return;
 }
 
+// تأیید پرداخت برای فعال‌سازی دائمی
+if (data === 'pick_once_confirm') {
+  await handlePickAccessConfirmation(userId, bot, db, getUser, updatePoints, query);
+  return;
+}
+
+if (data === 'cancel_pick_access') {
+  await bot.sendMessage(userId, 'درخواست لغو شد.');
+  await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
+    chat_id: query.message.chat.id,
+    message_id: query.message.message_id
+  });
+  return;
+}
+
+// انتخاب رول
 if (data.startsWith('pick_')) {
   const pickSettingsSnap = await get(ref(db, 'settings/pick_deduct'));
   const pickSettings = pickSettingsSnap.exists() ? pickSettingsSnap.val() : false;
 
   const isManagementAction = data === 'pick_settings' || data.startsWith('pick_set_');
   if (!isManagementAction) {
-
-    // بررسی حالت once قبل از ادامه
-    if (pickSettings === 'once') {
-      const accessSnap = await get(ref(db, `pick_access/${userId}`));
-      const alreadyPaid = accessSnap.exists();
-      if (!alreadyPaid) {
-        await bot.sendMessage(userId, 'آیا مطمئن هستید که می‌خواهید با پرداخت ۳ امتیاز این بخش را برای همیشه فعال کنید؟', {
-          reply_markup: {
-            inline_keyboard: [
-              [{ text: 'بله، فعال‌سازی دائمی', callback_data: 'pick_once_confirm' }],
-              [{ text: 'خیر، بازگشت', callback_data: 'cancel_pick_access' }]
-            ]
-          }
-        });
-        return;
-      }
-    }
-
-    // اگر رایگان یا پولی بود یا پرداخت شده بود، ادامه بده
-    await handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db, getUser);
+    await handlePickRole(userId, data, bot, updatePoints, pickSettings, query, db);
     return;
   }
 }
-
-
 
   // فقط اگر این دکمه مربوط به پنل مدیریت نبود، بریم سمت هندل
   const isManagementAction = data === 'pick_settings' || data.startsWith('pick_set_');
@@ -474,42 +470,11 @@ if (query.data === 'challenge') {
   // ...
   
   // تأیید پرداخت ۳ امتیاز برای فعال‌سازی دائمی رندوم پیک
-if (data === 'pick_once_confirm') {
-  const user = await getUser(userId);
-  const points = user?.points || 0;
 
-  if (points >= 3) {
-    await updatePoints(userId, -3);
-    await set(ref(db, `pick_access/${userId}`), { paid: true });
-    await bot.sendMessage(userId, '✅ شما با پرداخت ۳ امتیاز، دسترسی دائمی به این بخش پیدا کردید.');
-  } else {
-    await bot.sendMessage(userId, '❌ برای فعال‌سازی دائمی این بخش، حداقل ۳ امتیاز نیاز دارید.');
-  }
 
-  // بستن پنجره
-  await bot.editMessageReplyMarkup({ inline_keyboard: [] }, {
-    chat_id: query.message.chat.id,
-    message_id: query.message.message_id
-  });
 
-  return;
-}
 
-if (data === 'cancel_pick_access') {
-  await bot.sendMessage(userId, 'درخواست لغو شد.');
-  return;
-}
 
-// لغو فعال‌سازی دائمی
-if (data === 'pick_once_confirm') {
-  await handlePickAccessConfirmation(userId, bot, db, getUser, updatePoints);
-  return;
-}
-
-if (data === 'cancel_pick_access') {
-  await bot.sendMessage(userId, 'درخواست لغو شد.');
-  return;
-}
 
 // نمایش منوی مدیریت دکمه‌ها
 if (data === 'admin_buttons_manage' && userId === adminId) {
