@@ -243,13 +243,8 @@ function mainMenuKeyboard() {
     }
   };
 }
-function sendMainMenu(userId, user = {}, messageId = null, currentText = null, currentMarkup = null) {
-  let name = '';
-  if (user.first_name) name = user.first_name;
-  else if (user.last_name) name = user.last_name;
-  else if (user.username) name = '@' + user.username;
-  else name = 'کاربر عزیز';
-
+function sendMainMenu(userId, from = {}, messageId = null, currentText = null, currentMarkup = null) {
+  const name = from.first_name || 'دوست عزیز';
   const text = `سلام ${name}، به ربات محاسبه‌گر Mobile Legends خوش آمدید ✨`;
   const { reply_markup } = mainMenuKeyboard();
 
@@ -380,8 +375,6 @@ bot.on('callback_query', async (query) => {
   const userId = query.from.id;
   const data = query.data;
   const messageId = query.message && query.message.message_id;
-  userState[userId] = null;
-  sendMainMenu(userId, msg.from);
   const blockedBtn = MENU_BUTTONS.find(btn => btn.key === data);
 if (blockedBtn && !(await isButtonEnabled(data)) && userId !== adminId) {
   return bot.answerCallbackQuery(query.id, { text: 'این بخش موقتا از دسترس خارج شده', show_alert: true });
@@ -980,6 +973,7 @@ bot.on('message', async (msg) => {
   const text = msg.text || '';
   if (!userState[userId] && userId !== adminId) return;
   const user = await getUser(userId);
+  
   
 if (!botActive && msg.from.id !== adminId) {
     return bot.sendMessage(msg.from.id, "ربات موقتاً خاموش است.");
