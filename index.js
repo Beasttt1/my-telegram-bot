@@ -580,9 +580,11 @@ if (data.startsWith('toggle_btn_') && userId === adminId) {
     }
   }
   
-  if (data === 'tournament') {
-  await bot.answerCallbackQuery(query.id);
-  await bot.sendMessage(userId, 'فعلاً هیچ تورنمنتی در دسترس نیست.\nجزییات بیشتری بزودی اعلام خواهد شد.');
+if (data === 'tournament') {
+  await bot.answerCallbackQuery(query.id, {
+    text: 'فعلاً هیچ تورنمنتی در دسترس نیست.\nجزییات بیشتری بزودی اعلام خواهد شد.',
+    show_alert: true
+  });
   return;
 }
 if (data === 'hero_counter') {
@@ -973,7 +975,6 @@ bot.on('message', async (msg) => {
   const text = msg.text || '';
   if (!userState[userId] && userId !== adminId) return;
   const user = await getUser(userId);
-  
   
 if (!botActive && msg.from.id !== adminId) {
     return bot.sendMessage(msg.from.id, "ربات موقتاً خاموش است.");
