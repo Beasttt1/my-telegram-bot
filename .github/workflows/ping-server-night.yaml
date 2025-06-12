@@ -1,0 +1,15 @@
+name: Ping Server Every 15 Minutes (Night to Afternoon Tehran Time)
+
+on:
+  schedule:
+    - cron: '*/15 20-23 * * *'  # معادل ۰۰:۰۰ تا ۰۳:۰۰ تهران
+    - cron: '*/15 0-12 * * *'   # معادل ۰۳:۳۰ تا ۱۶:۳۰ تهران
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Curl the server
+        run: curl -fsS --retry 3 https://my-bot-xc37.onrender.com || echo "Server not reachable"
