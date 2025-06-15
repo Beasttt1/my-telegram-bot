@@ -1,20 +1,16 @@
-name: Ping Server Every 15 Minutes (Tehran 00:00–16:00)
+name: Ping Server Every 15 Minutes (Tehran 03:30–08:30)
 
 on:
   schedule:
-    - cron: '*/15 20-23 * * *'  # UTC شب قبل = تهران 23:30 تا 03:30
-    - cron: '*/15 0-12 * * *'   # UTC = تهران 03:30 تا 15:30
-    - cron: '*/15 13 * * *'     # UTC 13 = تهران 16:30 تا 17:30 → ما فقط تا 16 می‌خوایم، اما برای اطمینان یک اسلات اضافه
-
+    - cron: '*/15 20-23 * * *'  # UTC 20:00-23:59 = تهران 23:30-02:59 (شب قبل)
+    - cron: '*/15 0-4 * * *'    # UTC 00:00-04:59 = تهران 03:30-08:29 (صبح مورد نظر)
   workflow_dispatch:
 
 jobs:
   ping:
     runs-on: ubuntu-latest
-
     steps:
       - name: Show UTC Time (for debugging)
         run: date -u
-
       - name: Ping the server
         run: curl -fsS --retry 3 https://my-bot-xc37.onrender.com || echo "Server not reachable"
