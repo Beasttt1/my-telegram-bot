@@ -1,45 +1,57 @@
-const { exec } = require("child_process");
+const { spawn } = require("child_process");
 const fs = require("fs");
 
+// UUID خودت رو اینجا بگذار
+const UUID = "123e4567-e89b-12d3-a456-426614174000";
+
+// کانفیگ v2ray
 const config = {
-  "inbounds": [
+  inbounds: [
     {
-      "port": 443,
-      "protocol": "vless",
-      "settings": {
-        "clients": [
+      port: 443,
+      protocol: "vless",
+      settings: {
+        clients: [
           {
-            "id": "123e4567-e89b-12d3-a456-426614174000",
-            "level": 0,
-            "email": "user@example.com"
+            id: UUID,
+            level: 0,
+            email: "user@example.com"
           }
         ],
-        "decryption": "none"
+        decryption: "none"
       },
-      "streamSettings": {
-        "network": "ws",
-        "security": "tls",
-        "tlsSettings": {},
-        "wsSettings": {
-          "path": "/news"
+      streamSettings: {
+        network: "ws",
+        security: "tls",
+        tlsSettings: {},
+        wsSettings: {
+          path: "/news"
         }
       }
     }
   ],
-  "outbounds": [
+  outbounds: [
     {
-      "protocol": "freedom"
+      protocol: "freedom",
+      settings: {}
     }
   ]
 };
 
+// ذخیره کانفیگ در فایل config.json
 fs.writeFileSync("config.json", JSON.stringify(config, null, 2));
 
-exec("./bin/v2ray -config=config.json", (err, stdout, stderr) => {
-  if (err) {
-    console.error("Error running v2ray:", err);
-    process.exit(1);
-  }
-  console.log(stdout);
-  console.error(stderr);
+// اجرای باینری v2ray از مسیر bin/v2ray
+const v2ray = spawn("./bin/v2ray", ["-config=config.json"]);
+
+v2ray.stdout.on("data", data => {
+  console.log(`v2ray stdout: ${data}`);
+});
+
+v2ray.stderr.on("data", data => {
+  console.error(`v2ray stderr: ${data}`);
+});
+
+v2ray.on("close", code => {
+  console.log(`v2ray process exited with code ${code}`);
 });
